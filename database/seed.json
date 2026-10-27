@@ -1,0 +1,82 @@
+{
+  "source": "项目组提供的觅食点清单；2026-10-27 录入数据库。位置、价格及营业情况均未据此宣称已核实。",
+  "places": [
+    {"id":"canteen-dongyi","name":"东一食堂","placeType":"canteen","sourceGroup":"食堂","sourceLabel":"东一"},
+    {"id":"canteen-dongsan","name":"东三食堂","placeType":"canteen","sourceGroup":"食堂","sourceLabel":"东三"},
+    {"id":"canteen-jijinyuan","name":"集锦园食堂","placeType":"canteen","sourceGroup":"食堂","sourceLabel":"集锦园"},
+    {"id":"stall-hospital","name":"校医院对面小窗口","placeType":"stall","sourceGroup":"食堂","locationNote":"校医院对面；原始清单列在集锦园条目中","sourceLabel":"驴打滚（校医院对面的小窗口）"},
+    {"id":"canteen-yuyuan","name":"喻园食堂","placeType":"canteen","sourceGroup":"食堂","sourceLabel":"喻园"},
+    {"id":"canteen-jixianlou","name":"集贤楼食堂","placeType":"canteen","sourceGroup":"食堂","sourceLabel":"集贤楼"},
+    {"id":"canteen-dongyuan","name":"东园食堂","placeType":"canteen","sourceGroup":"食堂","sourceLabel":"东园"},
+    {"id":"canteen-xiyi","name":"西一食堂","placeType":"canteen","sourceGroup":"食堂","sourceLabel":"西一"},
+    {"id":"canteen-xier","name":"西二食堂","placeType":"canteen","sourceGroup":"食堂","sourceLabel":"西二"},
+    {"id":"canteen-baijingyuan","name":"百景园食堂","placeType":"canteen","sourceGroup":"食堂","sourceLabel":"百景园"},
+    {"id":"canteen-xueer","name":"学二食堂","placeType":"canteen","sourceGroup":"食堂","sourceLabel":"学二"},
+    {"id":"canteen-dongjiaogong","name":"东教工食堂","placeType":"canteen","sourceGroup":"食堂","sourceLabel":"东教工"},
+
+    {"id":"shop-yang","name":"杨阿姨鸡蛋灌饼","placeType":"shop","sourceGroup":"校内","sourceLabel":"杨阿姨鸡蛋灌饼"},
+    {"id":"shop-yunyuan-pancake","name":"韵苑茶咖山东杂粮煎饼","placeType":"shop","sourceGroup":"校内","locationNote":"韵苑茶咖","sourceLabel":"韵苑茶咖山东杂粮煎饼"},
+    {"id":"shop-yunyuan-chicken","name":"韵苑茶咖正新鸡排","placeType":"shop","sourceGroup":"校内","locationNote":"韵苑茶咖","sourceLabel":"韵苑茶咖正新鸡排"},
+    {"id":"shop-yunyuan-wonton","name":"韵苑茶咖成都抄手","placeType":"shop","sourceGroup":"校内","locationNote":"韵苑茶咖","sourceLabel":"韵苑茶咖成都抄手"},
+    {"id":"shop-riceball","name":"一捧饭团","placeType":"shop","sourceGroup":"校内","locationNote":"绝望坡","sourceLabel":"一捧饭团（绝望坡）"},
+    {"id":"shop-pizzahut","name":"必胜客","placeType":"shop","sourceGroup":"校内","sourceLabel":"必胜客"},
+    {"id":"shop-mcdonalds","name":"麦当劳","placeType":"shop","sourceGroup":"校内","sourceLabel":"麦当劳"},
+    {"id":"shop-burgerking","name":"汉堡王","placeType":"shop","sourceGroup":"校内","sourceLabel":"汉堡王"},
+    {"id":"shop-xihuayuan-lamb","name":"西华园羊排","placeType":"shop","sourceGroup":"校内","sourceLabel":"西华园羊排"},
+    {"id":"foodcourt-songlinli","name":"菘邻里","placeType":"food_court","sourceGroup":"校内","sourceLabel":"菘邻里"},
+    {"id":"shop-songlinli-bainqu","name":"白拿区","placeType":"shop","sourceGroup":"校内","parentId":"foodcourt-songlinli","sourceLabel":"菘邻里：白拿区"},
+    {"id":"shop-songlinli-maocai","name":"冒菜","placeType":"shop","sourceGroup":"校内","parentId":"foodcourt-songlinli","sourceLabel":"菘邻里：冒菜"},
+    {"id":"shop-songlinli-chaojijuan","name":"超吉卷","placeType":"shop","sourceGroup":"校内","parentId":"foodcourt-songlinli","sourceLabel":"菘邻里：超吉卷"},
+    {"id":"shop-songlinli-mixian","name":"米线","placeType":"shop","sourceGroup":"校内","parentId":"foodcourt-songlinli","sourceLabel":"菘邻里：米线"},
+    {"id":"shop-songlinli-xiayuyi","name":"夏威驿","placeType":"shop","sourceGroup":"校内","parentId":"foodcourt-songlinli","sourceLabel":"菘邻里：夏威驿"},
+    {"id":"shop-songlinli-dominos","name":"达美乐","placeType":"shop","sourceGroup":"校内","parentId":"foodcourt-songlinli","sourceLabel":"菘邻里：达美乐"}
+  ],
+  "recommendations": [
+    {"id":"rec-dongyi-01","placeId":"canteen-dongyi","floor":1,"name":"生烫红烧牛肉面","sourceLabel":"一楼生烫红烧牛肉面"},
+    {"id":"rec-dongyi-02","placeId":"canteen-dongyi","floor":1,"name":"卤菜","note":"减脂（收集备注，待核实）","sourceLabel":"一楼卤菜（减脂）"},
+    {"id":"rec-dongyi-03","placeId":"canteen-dongyi","floor":1,"name":"鸡皇饭","note":"性价比（收集备注，待核实）","sourceLabel":"一楼鸡皇饭（性价比）"},
+    {"id":"rec-dongyi-04","placeId":"canteen-dongyi","floor":1,"name":"水煮肉片","sourceLabel":"一楼水煮肉片"},
+    {"id":"rec-dongyi-05","placeId":"canteen-dongyi","floor":1,"name":"油泼面","sourceLabel":"一楼油泼面"},
+    {"id":"rec-dongyi-06","placeId":"canteen-dongyi","floor":1,"name":"拌面","sourceLabel":"一楼拌面"},
+    {"id":"rec-dongyi-07","placeId":"canteen-dongyi","floor":1,"name":"烧腊饭","note":"鸭腿、烧鸡、口水鸡","sourceLabel":"一楼烧腊饭（鸭腿，烧鸡，口水鸡）"},
+    {"id":"rec-dongyi-08","placeId":"canteen-dongyi","floor":2,"name":"轻食","sourceLabel":"二楼轻食"},
+    {"id":"rec-dongyi-09","placeId":"canteen-dongyi","floor":2,"name":"麻辣香锅","sourceLabel":"二楼麻辣香锅"},
+
+    {"id":"rec-dongsan-01","placeId":"canteen-dongsan","floor":1,"name":"鸭腿饭","note":"肉多（收集备注，待核实）","sourceLabel":"一楼鸭腿饭（肉多）"},
+    {"id":"rec-dongsan-02","placeId":"canteen-dongsan","floor":1,"name":"牛肉拉面","sourceLabel":"一楼牛肉拉面"},
+    {"id":"rec-dongsan-03","placeId":"canteen-dongsan","floor":1,"name":"油泼面","sourceLabel":"一楼油泼面"},
+
+    {"id":"rec-jijinyuan-01","placeId":"canteen-jijinyuan","name":"牛肉馄饨","sourceLabel":"牛肉馄饨"},
+    {"id":"rec-jijinyuan-02","placeId":"canteen-jijinyuan","name":"燕麦牛奶","sourceLabel":"燕麦牛奶"},
+    {"id":"rec-hospital-01","placeId":"stall-hospital","name":"驴打滚","sourceLabel":"驴打滚（校医院对面的小窗口）"},
+    {"id":"rec-yuyuan-01","placeId":"canteen-yuyuan","name":"铁板饭","sourceLabel":"铁板饭"},
+    {"id":"rec-jixianlou-01","placeId":"canteen-jixianlou","name":"红烧牛肉面","sourceLabel":"红烧牛肉面"},
+
+    {"id":"rec-dongyuan-01","placeId":"canteen-dongyuan","floor":1,"name":"铁板饭","sourceLabel":"一楼铁板饭"},
+    {"id":"rec-dongyuan-02","placeId":"canteen-dongyuan","floor":1,"name":"烧烤","sourceLabel":"一楼烧烤"},
+    {"id":"rec-dongyuan-03","placeId":"canteen-dongyuan","floor":1,"name":"炒饭","sourceLabel":"一楼炒饭"},
+    {"id":"rec-dongyuan-04","placeId":"canteen-dongyuan","floor":3,"name":"自选菜","sourceLabel":"三楼自选菜"},
+
+    {"id":"rec-xiyi-01","placeId":"canteen-xiyi","floor":1,"name":"喻园蒸笼","sourceLabel":"一楼喻园蒸笼"},
+    {"id":"rec-xiyi-02","placeId":"canteen-xiyi","floor":1,"name":"锡纸饭","sourceLabel":"一楼锡纸饭"},
+    {"id":"rec-xiyi-03","placeId":"canteen-xiyi","floor":2,"name":"轻食","sourceLabel":"二楼轻食"},
+    {"id":"rec-xiyi-04","placeId":"canteen-xiyi","floor":2,"name":"麻辣香锅","sourceLabel":"二楼麻辣香锅"},
+
+    {"id":"rec-xier-01","placeId":"canteen-xier","floor":1,"name":"糕点","sourceLabel":"一楼糕点"},
+    {"id":"rec-xier-02","placeId":"canteen-xier","floor":1,"name":"煲","note":"原始清单只写“煲”，具体名称待确认","sourceLabel":"一楼煲"},
+
+    {"id":"rec-baijingyuan-01","placeId":"canteen-baijingyuan","floor":1,"name":"水饺","sourceLabel":"一楼水饺、馄饨"},
+    {"id":"rec-baijingyuan-02","placeId":"canteen-baijingyuan","floor":1,"name":"馄饨","sourceLabel":"一楼水饺、馄饨"},
+    {"id":"rec-baijingyuan-03","placeId":"canteen-baijingyuan","floor":1,"name":"酸汤米线","sourceLabel":"一楼酸汤米线"},
+    {"id":"rec-baijingyuan-04","placeId":"canteen-baijingyuan","floor":1,"name":"牛奶炖桃胶","sourceLabel":"一楼牛奶炖桃胶"},
+    {"id":"rec-baijingyuan-05","placeId":"canteen-baijingyuan","floor":1,"name":"粤菜","sourceLabel":"一楼粤菜"},
+    {"id":"rec-baijingyuan-06","placeId":"canteen-baijingyuan","floor":1,"name":"海鲜粥","note":"厨师发挥不稳定（收集者评价，待核实）","sourceLabel":"一楼海鲜粥（但厨师发挥不稳定）"},
+    {"id":"rec-baijingyuan-07","placeId":"canteen-baijingyuan","floor":3,"name":"池奈","note":"是否为窗口名称待确认","sourceLabel":"三楼池奈、牛肉饭"},
+    {"id":"rec-baijingyuan-08","placeId":"canteen-baijingyuan","floor":3,"name":"牛肉饭","sourceLabel":"三楼池奈、牛肉饭"},
+
+    {"id":"rec-xueer-01","placeId":"canteen-xueer","floor":2,"name":"酱香饼","sourceLabel":"二楼酱香饼"},
+    {"id":"rec-xueer-02","placeId":"canteen-xueer","floor":2,"name":"粉丝","sourceLabel":"二楼粉丝"},
+    {"id":"rec-dongjiaogong-01","placeId":"canteen-dongjiaogong","name":"酱鸭饭","sourceLabel":"酱鸭饭"},
+    {"id":"rec-dongjiaogong-02","placeId":"canteen-dongjiaogong","name":"芝士焗红薯","sourceLabel":"芝士焗红薯"}
+  ]
+}
