@@ -17,7 +17,19 @@ git clone https://github.com/Aishton/lindaCoca-map.git
 cd lindaCoca-map
 ```
 
-### 本地查看网页
+### 本地运行网页与后端
+
+在仓库根目录运行：
+
+```powershell
+node server/server.mjs
+```
+
+打开 `http://127.0.0.1:3000/` 查看网页，打开 `http://127.0.0.1:3000/api/places` 查看数据库中的全部地点和推荐菜品。第一次启动会自动生成本地 SQLite 数据库；之后修改 `database/seed.json` 时，运行 `node database/init.mjs` 更新本地数据。按 `Ctrl+C` 停止服务。
+
+当前页面仍使用演示数据和浏览器本地存储，尚未调用这些 API；页面上的“管理员维护”也不会修改 SQLite。接口说明见 [server/README.md](server/README.md)。
+
+### 只查看静态网页
 
 直接双击 `index.html`，用浏览器打开即可查看页面。
 
@@ -34,6 +46,7 @@ npx serve .
 每次修改前先同步最新版本：
 
 ```bash
+git switch main
 git pull origin main
 ```
 
@@ -50,19 +63,15 @@ index.html
 确认网页正常后，在项目目录运行：
 
 ```bash
+git switch -c feat/short-description
 git status
-git add index.html
+git add .
+git status
 git commit -m "说明本次修改内容"
-git push origin main
+git push -u origin feat/short-description
 ```
 
-例如：
-
-```bash
-git commit -m "补充东区餐饮点"
-```
-
-推送成功后，GitHub Pages 会自动更新网页。通常等待一两分钟即可看到最新版本。
+推送成功后，在 GitHub 创建 Pull Request，检查后合并到 `main`。如果网络连接在推送时出现 `SSL_ERROR_SYSCALL`，可尝试在 `git push` 前加入 `git -c http.version=HTTP/1.1`。
 
 ## 协作约定
 
@@ -84,4 +93,4 @@ git commit -m "补充东区餐饮点"
 
 ## 觅食点数据库
 
-项目组收集的食堂、楼层、推荐食物和校内店铺已整理为 SQLite 种子数据。运行 `node database/init.mjs` 可在本地生成数据库；字段含义与待确认项见 [database/README.md](database/README.md)。当前网页尚未连接数据库，仍使用页面中的演示数据。
+项目组收集的食堂、楼层、推荐食物和校内店铺已整理为 SQLite 种子数据。运行 `node database/init.mjs` 可在本地生成或更新数据库；字段含义与待确认项见 [database/README.md](database/README.md)。后端读取这些数据，但当前网页尚未连接数据库，仍使用页面中的演示数据。
