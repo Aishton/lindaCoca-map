@@ -3,6 +3,8 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const pagePath = fileURLToPath(new URL('../index.html', import.meta.url));
+const scriptPath = fileURLToPath(new URL('../app.js', import.meta.url));
+const seedPath = fileURLToPath(new URL('../database/seed.json', import.meta.url));
 const placeColumns = `
   id, name, place_type, source_group, parent_id, campus_area,
   location_note, source_label, verification_status, last_confirmed_at
@@ -118,6 +120,18 @@ export function createApp(database) {
       if (path === '/' || path === '/index.html') {
         response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         response.end(readFileSync(pagePath));
+        return;
+      }
+
+      if (path === '/app.js') {
+        response.writeHead(200, { 'Content-Type': 'text/javascript; charset=utf-8' });
+        response.end(readFileSync(scriptPath));
+        return;
+      }
+
+      if (path === '/database/seed.json') {
+        response.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        response.end(readFileSync(seedPath));
         return;
       }
 
