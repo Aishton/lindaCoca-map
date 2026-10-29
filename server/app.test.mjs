@@ -49,6 +49,14 @@ test('地点列表和详情从 SQLite 返回，缺失地点返回 404', async ()
     const page = await fetch(`${base}/`);
     assert.equal(page.status, 200);
     assert.match(await page.text(), /华科觅食/);
+
+    const script = await fetch(`${base}/app.js`);
+    assert.equal(script.status, 200);
+    assert.match(await script.text(), /loadPlaces\(\)/);
+
+    const seed = await fetch(`${base}/database/seed.json`);
+    assert.equal(seed.status, 200);
+    assert.ok((await seed.json()).places.length > 0);
   } finally {
     await new Promise((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
     database.close();
