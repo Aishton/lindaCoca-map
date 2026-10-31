@@ -10,16 +10,35 @@ const seed = JSON.parse(readFileSync(join(directory, 'seed.json'), 'utf8'));
 database.exec('PRAGMA foreign_keys = ON');
 database.exec(readFileSync(join(directory, 'schema.sql'), 'utf8'));
 
+// 为已经生成过的本地数据库补充地图字段。
+const placeColumns = new Set(database.prepare('PRAGMA table_info(places)').all().map(column => column.name));
+if (!placeColumns.has('map_x')) database.exec('ALTER TABLE places ADD COLUMN map_x REAL');
+if (!placeColumns.has('map_y')) database.exec('ALTER TABLE places ADD COLUMN map_y REAL');
+if (!placeColumns.has('longitude')) database.exec('ALTER TABLE places ADD COLUMN longitude REAL');
+if (!placeColumns.has('latitude')) database.exec('ALTER TABLE places ADD COLUMN latitude REAL');
+if (!placeColumns.has('coordinate_source')) database.exec('ALTER TABLE places ADD COLUMN coordinate_source TEXT');
+if (!placeColumns.has('location_status')) {
+  database.exec("ALTER TABLE places ADD COLUMN location_status TEXT NOT NULL DEFAULT '未定位'");
+}
+
 const addPlace = database.prepare(`
   INSERT INTO places
-    (id, name, place_type, source_group, parent_id, location_note, source_label)
-  VALUES (?, ?, ?, ?, ?, ?, ?)
+    (id, name, place_type, source_group, parent_id, campus_area, location_note,
+     map_x, map_y, longitude, latitude, coordinate_source, location_status, source_label)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(id) DO UPDATE SET
     name = excluded.name,
     place_type = excluded.place_type,
     source_group = excluded.source_group,
     parent_id = excluded.parent_id,
+    campus_area = excluded.campus_area,
     location_note = excluded.location_note,
+    map_x = excluded.map_x,
+    map_y = excluded.map_y,
+    longitude = excluded.longitude,
+    latitude = excluded.latitude,
+    coordinate_source = excluded.coordinate_source,
+    location_status = excluded.location_status,
     source_label = excluded.source_label,
     updated_at = CURRENT_TIMESTAMP
 `);
@@ -47,7 +66,14 @@ try {
       place.placeType,
       place.sourceGroup,
       place.parentId ?? null,
+      place.campusArea ?? null,
       place.locationNote ?? null,
+      place.mapX ?? null,
+      place.mapY ?? null,
+      place.longitude ?? null,
+      place.latitude ?? null,
+      place.coordinateSource ?? null,
+      place.locationStatus ?? '未定位',
       place.sourceLabel,
     );
   }

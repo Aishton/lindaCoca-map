@@ -17,7 +17,7 @@ node server/server.mjs
 | `GET /api/places` | 获取全部觅食点及其菜品 | `{ "places": [...] }` |
 | `GET /api/places/:id` | 获取一个觅食点及其菜品 | `{ "place": {...} }` |
 
-地点字段为 `id`、`name`、`placeType`、`sourceGroup`、`parentId`、`campusArea`、`locationNote`、`sourceLabel`、`verificationStatus`、`lastConfirmedAt` 和 `recommendations`。菜品字段为 `id`、`placeId`、`name`、`floor`、`note`、`priceLevel`、`mealPeriod`、`sourceLabel` 和 `verificationStatus`。尚未收集到的数据返回 `null`，不会猜测价格、餐次、位置或营业状态。
+地点字段为 `id`、`name`、`placeType`、`sourceGroup`、`parentId`、`campusArea`、`locationNote`、`longitude`、`latitude`、`coordinateSource`、`mapX`、`mapY`、`locationStatus`、`sourceLabel`、`verificationStatus`、`lastConfirmedAt` 和 `recommendations`。菜品字段为 `id`、`placeId`、`name`、`floor`、`note`、`priceLevel`、`mealPeriod`、`sourceLabel` 和 `verificationStatus`。当前地图使用 `longitude` 和 `latitude`；`mapX`、`mapY` 仅为旧版形象化底图兼容字段。
 
 未知地点返回 HTTP 404 和 `{ "error": "place_not_found", "message": "..." }`。当前接口只支持读取；其它方法返回 HTTP 405。网页优先读取 `/api/places`，若 API 不可用则读取 `database/seed.json`；GitHub Pages 上只提供后者。需要审核的反馈提交和管理员写入功能尚未实现。
 

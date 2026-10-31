@@ -6,6 +6,8 @@ const state = {
   results: [],
   source: '',
   quickMode: false,
+  mapType: 'all',
+  selectedMapPlaceId: null,
 };
 
 const typePatterns = {
@@ -83,6 +85,12 @@ function normalizePlaces(list) {
   if (!Array.isArray(list)) throw new Error('地点数据格式不正确');
   return list.map(place => ({
     ...place,
+    mapX: place.mapX !== null && place.mapX !== undefined && Number.isFinite(Number(place.mapX)) ? Number(place.mapX) : null,
+    mapY: place.mapY !== null && place.mapY !== undefined && Number.isFinite(Number(place.mapY)) ? Number(place.mapY) : null,
+    longitude: place.longitude !== null && place.longitude !== undefined && Number.isFinite(Number(place.longitude)) ? Number(place.longitude) : null,
+    latitude: place.latitude !== null && place.latitude !== undefined && Number.isFinite(Number(place.latitude)) ? Number(place.latitude) : null,
+    coordinateSource: place.coordinateSource || null,
+    locationStatus: place.locationStatus || '未定位',
     recommendations: Array.isArray(place.recommendations) ? place.recommendations : [],
   }));
 }
@@ -113,6 +121,12 @@ function fromSeed(seed) {
     parentId: place.parentId ?? null,
     campusArea: null,
     locationNote: place.locationNote ?? null,
+    mapX: place.mapX ?? null,
+    mapY: place.mapY ?? null,
+    longitude: place.longitude ?? null,
+    latitude: place.latitude ?? null,
+    coordinateSource: place.coordinateSource ?? null,
+    locationStatus: place.locationStatus ?? '未定位',
     sourceLabel: place.sourceLabel,
     verificationStatus: '待确认',
     lastConfirmedAt: null,
@@ -148,6 +162,7 @@ async function loadPlaces() {
   $('#home .head > .small').textContent = `已收集 ${state.places.length} 个地点 · ${state.source}`;
   $('#count').textContent = `${state.places.length} 个地点`;
   renderAllPlaces();
+  renderMap();
 }
 
 function toast(message) {
@@ -163,7 +178,171 @@ function go(view) {
     element.classList.toggle('active', element.id === view);
   });
   if (view === 'admin') renderAllPlaces();
+  if (view === 'map') renderMap();
   scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+let leafletMap = null;
+let leafletMarkerLayer = null;
+const leafletMarkerByPlace = new Map();
+
+function mapKind(place) {
+  return place.placeType === 'canteen' ? 'canteen' : 'shop';
+}
+
+function mapGroups() {
+  const groups = new Map();
+  for (const place of state.places) {
+    if (place.longitude === null || place.latitude === null) continue;
+    const key = `${place.longitude.toFixed(5)}:${place.latitude.toFixed(5)}`;
+    const group = groups.get(key) ?? {
+      longitude: place.longitude,
+      latitude: place.latitude,
+      places: [],
+    };
+    group.places.push(place);
+    groups.set(key, group);
+  }
+  return [...groups.values()];
+}
+
+function mapGroupMatches(group) {
+  const query = ($('#map-search')?.value || '').trim().toLocaleLowerCase();
+  return group.places.some(place => {
+    const kindMatches = state.mapType === 'all' || mapKind(place) === state.mapType;
+    const textMatches = !query || [place.name, place.locationNote, ...place.recommendations.map(item => item.name)]
+      .some(value => String(value ?? '').toLocaleLowerCase().includes(query));
+    return kindMatches && textMatches;
+  });
+}
+
+function initializeLeafletMap() {
+  if (leafletMap) return true;
+  const container = $('#campus-map');
+  if (!container) return false;
+  if (!window.L) {
+    $('#map-loading').innerHTML = '在线地图组件加载失败，请检查网络后刷新。<br><a href="https://map.hust.edu.cn/" target="_blank" rel="noopener">打开华科官方地图</a>';
+    return false;
+  }
+
+  leafletMap = L.map(container, {
+    minZoom: 14,
+    maxZoom: 19,
+    zoomControl: true,
+  });
+  leafletMarkerLayer = L.layerGroup().addTo(leafletMap);
+  const tiles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    minZoom: 14,
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap contributors</a>',
+  });
+  tiles.on('load', () => container.classList.add('is-ready'));
+  tiles.addTo(leafletMap);
+  leafletMap.fitBounds([
+    [30.5074, 114.3972],
+    [30.5215, 114.4328],
+  ], { padding: [22, 22] });
+  leafletMap.on('popupclose', () => {
+    state.selectedMapPlaceId = null;
+    updateLeafletMarkerIcons();
+  });
+  setTimeout(() => container.classList.add('is-ready'), 1800);
+  return true;
+}
+
+function markerIcon(group) {
+  const primary = group.places.find(place => place.placeType === 'canteen') ?? group.places[0];
+  const approximate = group.places.some(place => place.locationStatus !== '已确认');
+  const selected = group.places.some(place => place.id === state.selectedMapPlaceId);
+  return L.divIcon({
+    className: 'food-map-icon',
+    html: `<span class="geo-marker ${mapKind(primary) === 'shop' ? 'shop' : ''} ${approximate ? 'approximate' : ''} ${selected ? 'selected' : ''}"><span>${group.places.length > 1 ? group.places.length : '•'}</span></span>`,
+    iconSize: [38, 38],
+    iconAnchor: [19, 38],
+    popupAnchor: [0, -34],
+  });
+}
+
+function mapPopupContent(places) {
+  const first = places[0];
+  const parent = places.find(place => place.placeType === 'food_court');
+  const sharedLocation = places.every(place => place.locationNote && place.locationNote === first.locationNote)
+    ? first.locationNote
+    : null;
+  const groupTitle = parent?.name || sharedLocation || first.name;
+  const source = first.coordinateSource ? `<p>坐标来源：${escapeHtml(first.coordinateSource)}</p>` : '';
+  return `<h3>${escapeHtml(groupTitle)}</h3><p>${escapeHtml(places.map(place => place.name).join(' · '))}</p><p><span class="location-status">${escapeHtml(first.locationStatus)}</span>${first.locationNote && first.locationNote !== groupTitle ? ` · ${escapeHtml(first.locationNote)}` : ''}</p>${source}${places.map(place => `<button class="secondary" data-map-detail="${escapeHtml(place.id)}">查看${escapeHtml(place.name)}详情</button>`).join('')}`;
+}
+
+function updateLeafletMarkerIcons() {
+  for (const marker of new Set(leafletMarkerByPlace.values())) {
+    marker.setIcon(markerIcon(marker.foodGroup));
+  }
+}
+
+function renderMap() {
+  const groups = mapGroups();
+  const visible = groups.filter(mapGroupMatches);
+  $('#map-count').textContent = `${visible.reduce((sum, group) => sum + group.places.length, 0)} 个地点 · ${visible.length} 个标记`;
+  if (!initializeLeafletMap()) return;
+
+  leafletMarkerLayer.clearLayers();
+  leafletMarkerByPlace.clear();
+  for (const group of visible) {
+    const names = group.places.map(place => place.name).join('、');
+    const marker = L.marker([group.latitude, group.longitude], {
+      icon: markerIcon(group),
+      title: names,
+      alt: names,
+      keyboard: true,
+    });
+    marker.foodGroup = group;
+    marker.bindPopup(mapPopupContent(group.places), { maxWidth: 300, minWidth: 220 });
+    marker.on('click', () => {
+      state.selectedMapPlaceId = group.places[0].id;
+      updateLeafletMarkerIcons();
+    });
+    marker.addTo(leafletMarkerLayer);
+    for (const place of group.places) leafletMarkerByPlace.set(place.id, marker);
+  }
+
+  if (state.selectedMapPlaceId && !leafletMarkerByPlace.has(state.selectedMapPlaceId)) {
+    closeMapPopup();
+  }
+  setTimeout(() => leafletMap.invalidateSize(), 0);
+}
+
+function closeMapPopup() {
+  state.selectedMapPlaceId = null;
+  leafletMap?.closePopup();
+  updateLeafletMarkerIcons();
+}
+
+function showMapPopup(ids) {
+  const marker = ids.map(id => leafletMarkerByPlace.get(id)).find(Boolean);
+  if (!marker) return;
+  state.selectedMapPlaceId = marker.foodGroup.places[0].id;
+  updateLeafletMarkerIcons();
+  marker.openPopup();
+  leafletMap.panTo(marker.getLatLng(), { animate: true });
+}
+
+function focusPlaceOnMap(id) {
+  const original = state.places.find(place => place.id === id);
+  if (!original) return;
+  const place = original.parentId ? state.places.find(item => item.id === original.parentId) ?? original : original;
+  state.mapType = 'all';
+  $('#map-search').value = '';
+  document.querySelectorAll('#map-filters [data-map-type]').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.mapType === 'all'));
+  });
+  go('map');
+  setTimeout(() => {
+    const marker = leafletMarkerByPlace.get(place.id) ?? leafletMarkerByPlace.get(original.id);
+    if (!marker) return;
+    leafletMap.flyTo(marker.getLatLng(), Math.max(17, leafletMap.getZoom()), { duration: 0.65 });
+    showMapPopup([place.id, original.id]);
+  }, 80);
 }
 
 function updateMealButtons() {
@@ -241,7 +420,7 @@ function detail(id, from = 'results') {
   const dishes = place.recommendations.map(item => `<li>${escapeHtml(dishLabel(item))}${item.note ? ` <span class="small">（${escapeHtml(item.note)}）</span>` : ''}</li>`).join('');
   $('#detailbox').innerHTML = `<div class="detailhero"><div><span class="zone pending">${escapeHtml(placeLabel(place))}</span><h2>${escapeHtml(place.name)}</h2>${featured ? `<p class="dish">本次推荐：${escapeHtml(featured.name)}</p>` : ''}</div><button id="feedback" class="primary">纠错反馈</button></div>
     <div class="details">
-      <div class="detailitem"><b>位置线索</b><span>${escapeHtml(locationFor(place, featured))}</span></div>
+      <div class="detailitem"><b>位置线索</b><span>${escapeHtml(locationFor(place, featured))}<br><span class="small location-status">${escapeHtml(place.locationStatus || '未定位')}</span></span><button class="secondary map-location-button" data-locate="${escapeHtml(place.id)}">在地图上查看</button></div>
       <div class="detailitem"><b>价格</b><span>待确认</span></div>
       <div class="detailitem"><b>午餐／晚餐营业时段</b><span>待确认</span></div>
       <div class="detailitem"><b>信息状态</b><span>${escapeHtml(place.verificationStatus || '待确认')}</span></div>
@@ -250,9 +429,10 @@ function detail(id, from = 'results') {
     </div>
     ${dishes ? `<div class="notice"><b>已收集的菜品／线索</b><ul>${dishes}</ul><span class="small">这些内容来自项目组清单，营业情况、位置和价格仍需现场核实。</span></div>` : ''}`;
   $('#feedback').onclick = () => toast('反馈提交功能尚未接入，请先联系项目组');
+  $('#detailbox [data-locate]').onclick = event => focusPlaceOnMap(event.currentTarget.dataset.locate);
   const back = $('#detail .back');
   back.dataset.go = from;
-  back.textContent = from === 'admin' ? '← 返回全部地点' : '← 返回推荐结果';
+  back.textContent = from === 'admin' ? '← 返回全部地点' : from === 'map' ? '← 返回校园地图' : '← 返回推荐结果';
   go('detail');
 }
 
@@ -271,6 +451,20 @@ function renderAllPlaces() {
 
 function setupPage() {
   $('#place-search').addEventListener('input', renderAllPlaces);
+  $('#map-search').addEventListener('input', renderMap);
+  $('#map-filters').addEventListener('click', event => {
+    const button = event.target.closest('[data-map-type]');
+    if (!button) return;
+    state.mapType = button.dataset.mapType;
+    document.querySelectorAll('#map-filters [data-map-type]').forEach(item => {
+      item.setAttribute('aria-pressed', String(item === button));
+    });
+    renderMap();
+  });
+  $('#campus-map').addEventListener('click', event => {
+    const detailButton = event.target.closest('[data-map-detail]');
+    if (detailButton) detail(detailButton.dataset.mapDetail, 'map');
+  });
 
   document.querySelectorAll('[data-go]').forEach(button => {
     button.addEventListener('click', () => go(button.dataset.go));
@@ -304,4 +498,6 @@ function setupPage() {
 }
 
 setupPage();
+const initialView = location.hash.slice(1);
+if (['home', 'map', 'admin'].includes(initialView)) go(initialView);
 loadPlaces();

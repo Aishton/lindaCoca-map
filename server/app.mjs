@@ -7,7 +7,9 @@ const scriptPath = fileURLToPath(new URL('../app.js', import.meta.url));
 const seedPath = fileURLToPath(new URL('../database/seed.json', import.meta.url));
 const placeColumns = `
   id, name, place_type, source_group, parent_id, campus_area,
-  location_note, source_label, verification_status, last_confirmed_at
+  location_note, map_x, map_y, longitude, latitude, coordinate_source,
+  location_status, source_label,
+  verification_status, last_confirmed_at
 `;
 const recommendationColumns = `
   id, place_id, name, floor, note, price_level, meal_period,
@@ -45,6 +47,12 @@ function mapPlace(row, recommendations) {
     parentId: row.parent_id,
     campusArea: row.campus_area,
     locationNote: row.location_note,
+    mapX: row.map_x,
+    mapY: row.map_y,
+    longitude: row.longitude,
+    latitude: row.latitude,
+    coordinateSource: row.coordinate_source,
+    locationStatus: row.location_status,
     sourceLabel: row.source_label,
     verificationStatus: row.verification_status,
     lastConfirmedAt: row.last_confirmed_at,

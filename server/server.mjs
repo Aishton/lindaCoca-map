@@ -1,12 +1,10 @@
-import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { DatabaseSync } from 'node:sqlite';
 import { createApp } from './app.mjs';
 
 const databasePath = fileURLToPath(new URL('../database/meishi.sqlite', import.meta.url));
-if (!existsSync(databasePath)) {
-  await import('../database/init.mjs');
-}
+// 初始化脚本是幂等的，每次启动都执行以便同步 schema 迁移和地图种子数据。
+await import('../database/init.mjs');
 
 const database = new DatabaseSync(databasePath);
 database.exec('PRAGMA foreign_keys = ON');

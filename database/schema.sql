@@ -8,6 +8,13 @@ CREATE TABLE IF NOT EXISTS places (
     parent_id TEXT REFERENCES places(id),
     campus_area TEXT CHECK (campus_area IN ('east', 'central', 'west')),
     location_note TEXT,
+    map_x REAL CHECK (map_x IS NULL OR (map_x >= 0 AND map_x <= 100)),
+    map_y REAL CHECK (map_y IS NULL OR (map_y >= 0 AND map_y <= 100)),
+    longitude REAL CHECK (longitude IS NULL OR (longitude >= -180 AND longitude <= 180)),
+    latitude REAL CHECK (latitude IS NULL OR (latitude >= -90 AND latitude <= 90)),
+    coordinate_source TEXT,
+    location_status TEXT NOT NULL DEFAULT '未定位'
+        CHECK (location_status IN ('未定位', '大致位置', '已确认')),
     source_label TEXT NOT NULL,
     verification_status TEXT NOT NULL DEFAULT '待确认'
         CHECK (verification_status IN ('待确认', '已核实')),
