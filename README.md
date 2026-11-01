@@ -24,6 +24,7 @@
 - [项目文档索引](docs/README.md)
 - [地图与位置数据](docs/map/README.md)：地图结构、坐标来源、状态规则、人工圈点和发布检查。
 - [角色、权限与纠错审核设计](docs/roles-and-review.md)：后续游客、贡献者、管理员、维护者和审核工作流。
+- [项目整体维护方案](docs/maintenance.md)：团队分工、变更审核、发布回滚、周期性维护和交接。
 - [数据库说明](database/README.md)
 - [后端与 API 说明](server/README.md)
 
@@ -46,7 +47,8 @@ lindaCoca-map/
 └─ docs/
    ├─ README.md               # 文档索引
    ├─ map/README.md           # 地图专题文档
-   └─ roles-and-review.md     # 角色、权限和审核设计
+   ├─ roles-and-review.md     # 角色、权限和审核设计
+   └─ maintenance.md          # 团队分工与整体维护方案
 ```
 
 `index.html` 和 `app.js` 保留在根目录，是为了让现有 GitHub Pages 部署继续工作；专题说明统一放入 `docs/`。
@@ -126,3 +128,6 @@ git push -u origin feat/short-description
 **[角色、权限与纠错审核设计](docs/roles-and-review.md)**
 
 该设计明确要求：用户只能提交提案，管理员审核后才能更新正式地点；人工圈点即使审核通过，默认仍保持“大致位置”。
+
+日常分工、发布回滚、质量门禁、事故处理与交接清单见[项目整体维护方案](docs/maintenance.md)。
+
