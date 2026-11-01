@@ -13,7 +13,7 @@ const state = {
   calibrations: [],
 };
 
-const calibrationStorageKey = 'hustmap-calibration-draft-v1';
+const calibrationStorageKey = 'hustmap-calibration-draft-v2';
 
 const typePatterns = {
   米饭: /饭|粥|煲/,
@@ -215,7 +215,7 @@ function mapKind(place) {
 function calibrationTargets() {
   const groups = new Map();
   for (const place of state.places) {
-    if (place.locationStatus === '已确认' || place.longitude === null || place.latitude === null) continue;
+    if (place.longitude === null || place.latitude === null) continue;
     const key = `${place.longitude.toFixed(7)}:${place.latitude.toFixed(7)}`;
     const group = groups.get(key) ?? {
       id: place.id,
@@ -279,7 +279,7 @@ function calibrationExport() {
   return {
     version: 1,
     generatedAt: new Date().toISOString(),
-    note: '华科觅食地图浏览器校准草稿，尚未写入线上数据',
+    note: '华科觅食地图浏览器校准草稿；人工圈点仅作为大致位置，尚未写入线上数据',
     calibrations: state.calibrations.map(item => ({
       targetId: item.targetId,
       label: item.label,
@@ -287,6 +287,7 @@ function calibrationExport() {
       names: item.names,
       latitude: item.latitude,
       longitude: item.longitude,
+      locationStatus: '大致位置',
       originalLatitude: item.originalLatitude,
       originalLongitude: item.originalLongitude,
     })),
@@ -306,13 +307,12 @@ function renderCalibrationPanel() {
     return `<option value="${escapeHtml(target.id)}"${target.id === state.calibrationTargetId ? ' selected' : ''}>${done ? '✓ ' : ''}${escapeHtml(target.label)}${target.names.length > 1 ? `（${target.names.length} 个地点）` : ''}</option>`;
   }).join('');
   panel.hidden = !state.calibrationMode;
-  $('#calibration-toggle').setAttribute('aria-pressed', String(state.calibrationMode));
   $('#campus-map').classList.toggle('calibration-active', state.calibrationMode);
   const current = state.calibrations.find(item => item.targetId === state.calibrationTargetId);
   const status = current
     ? `<strong>当前已记录</strong><br>${current.latitude.toFixed(7)}, ${current.longitude.toFixed(7)}`
     : '<strong>当前尚未记录</strong><br>请在地图上单击正确位置';
-  $('#calibration-status').innerHTML = `${status}<br>总进度：${state.calibrations.length} / ${targets.length}`;
+  $('#calibration-status').innerHTML = `${status}<br>本浏览器已记录：${state.calibrations.length} 处`;
   $('#calibration-undo').disabled = !current;
   $('#calibration-copy').disabled = state.calibrations.length === 0;
   $('#calibration-download').disabled = state.calibrations.length === 0;
@@ -345,6 +345,30 @@ function recordCalibration(latitude, longitude) {
   renderMap();
   renderCalibrationPanel();
   toast(`已记录：${target.label}`);
+}
+
+function stopCalibration() {
+  state.calibrationMode = false;
+  renderCalibrationPanel();
+  toast('已退出位置校准');
+}
+
+function startCalibrationForPlace(id) {
+  const target = calibrationTargets().find(item => item.placeIds.includes(id));
+  if (!target) return toast('这个地点暂时没有可校准的地图标记');
+  state.calibrationTargetId = target.id;
+  state.calibrationMode = true;
+  state.mapType = 'all';
+  $('#map-search').value = '';
+  document.querySelectorAll('#map-filters [data-map-type]').forEach(button => {
+    button.setAttribute('aria-pressed', String(button.dataset.mapType === 'all'));
+  });
+  closeMapPopup();
+  renderMap();
+  renderCalibrationPanel();
+  scrollToMap();
+  setTimeout(focusCalibrationTarget, 180);
+  toast(`请在地图上单击“${target.label}”的正确位置`);
 }
 
 async function copyCalibrationResult() {
@@ -448,7 +472,7 @@ function initializeLeafletMap() {
 
 function markerIcon(group) {
   const primary = group.places.find(place => place.placeType === 'canteen') ?? group.places[0];
-  const approximate = group.places.some(place => place.locationStatus !== '已确认');
+  const approximate = group.places.some(place => place.locationStatus !== '已确认' || calibrationForPlace(place.id));
   const selected = group.places.some(place => place.id === state.selectedMapPlaceId);
   const calibrated = group.places.some(place => calibrationForPlace(place.id));
   return L.divIcon({
@@ -462,13 +486,15 @@ function markerIcon(group) {
 
 function mapPopupContent(places) {
   const first = places[0];
+  const hasCalibrationDraft = places.some(place => calibrationForPlace(place.id));
   const parent = places.find(place => place.placeType === 'food_court');
   const sharedLocation = places.every(place => place.locationNote && place.locationNote === first.locationNote)
     ? first.locationNote
     : null;
   const groupTitle = parent?.name || sharedLocation || first.name;
   const source = first.coordinateSource ? `<p>坐标来源：${escapeHtml(first.coordinateSource)}</p>` : '';
-  return `<h3>${escapeHtml(groupTitle)}</h3><p>${escapeHtml(places.map(place => place.name).join(' · '))}</p><p><span class="location-status">${escapeHtml(first.locationStatus)}</span>${first.locationNote && first.locationNote !== groupTitle ? ` · ${escapeHtml(first.locationNote)}` : ''}</p>${source}${places.map(place => `<button class="secondary" data-map-detail="${escapeHtml(place.id)}">查看${escapeHtml(place.name)}详情</button>`).join('')}`;
+  const locationStatus = hasCalibrationDraft ? '大致位置（本地校准草稿）' : first.locationStatus;
+  return `<h3>${escapeHtml(groupTitle)}</h3><p>${escapeHtml(places.map(place => place.name).join(' · '))}</p><p><span class="location-status">${escapeHtml(locationStatus)}</span>${first.locationNote && first.locationNote !== groupTitle ? ` · ${escapeHtml(first.locationNote)}` : ''}</p>${source}${places.map(place => `<button class="secondary" data-map-detail="${escapeHtml(place.id)}">查看${escapeHtml(place.name)}详情</button>`).join('')}`;
 }
 
 function updateLeafletMarkerIcons() {
@@ -625,8 +651,13 @@ function detail(id, from = 'results') {
       <div class="detailitem"><b>最近确认</b><span>${escapeHtml(place.lastConfirmedAt || '暂无确认记录')}</span></div>
       <div class="detailitem"><b>来源分组</b><span>${escapeHtml(place.sourceGroup)}</span></div>
     </div>
+    <div id="feedback-correction" class="notice feedback-correction" hidden><b>纠错反馈</b><p>如果地图位置不准确，可以直接在地图上重新圈点。人工圈点仍会标记为“大致位置”，不会自动变成“已确认”。</p><button id="calibrate-place" class="secondary" type="button">在地图上重新圈位置</button><br><span class="small">名称、营业时间或菜品等其它纠错暂未接入，请先联系项目组。</span></div>
     ${dishes ? `<div class="notice"><b>已收集的菜品／线索</b><ul>${dishes}</ul><span class="small">这些内容来自项目组清单，营业情况、位置和价格仍需现场核实。</span></div>` : ''}`;
-  $('#feedback').onclick = () => toast('反馈提交功能尚未接入，请先联系项目组');
+  $('#feedback').onclick = () => {
+    const panel = $('#feedback-correction');
+    panel.hidden = !panel.hidden;
+  };
+  $('#calibrate-place').onclick = () => startCalibrationForPlace(place.id);
   $('#detailbox [data-locate]').onclick = event => focusPlaceOnMap(event.currentTarget.dataset.locate);
   const back = $('#detail .back');
   const returnToMap = from === 'map';
@@ -652,21 +683,6 @@ function renderAllPlaces() {
 function setupPage() {
   $('#place-search').addEventListener('input', renderAllPlaces);
   $('#map-search').addEventListener('input', renderMap);
-  $('#calibration-toggle').addEventListener('click', () => {
-    state.calibrationMode = !state.calibrationMode;
-    closeMapPopup();
-    renderCalibrationPanel();
-    if (state.calibrationMode) {
-      state.mapType = 'all';
-      $('#map-search').value = '';
-      document.querySelectorAll('#map-filters [data-map-type]').forEach(button => {
-        button.setAttribute('aria-pressed', String(button.dataset.mapType === 'all'));
-      });
-      renderMap();
-      setTimeout(focusCalibrationTarget, 80);
-      toast('校准模式已开启：选择地点后单击地图');
-    }
-  });
   $('#calibration-target').addEventListener('change', event => {
     state.calibrationTargetId = event.target.value;
     renderCalibrationPanel();
@@ -682,6 +698,7 @@ function setupPage() {
   });
   $('#calibration-copy').addEventListener('click', copyCalibrationResult);
   $('#calibration-download').addEventListener('click', downloadCalibrationResult);
+  $('#calibration-close').addEventListener('click', stopCalibration);
   $('#calibration-clear').addEventListener('click', () => {
     if (!confirm('确定清空当前浏览器中的全部校准草稿吗？')) return;
     state.calibrations = [];

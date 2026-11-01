@@ -180,9 +180,9 @@
       "mapY": 65,
       "locationStatus": "大致位置",
       "sourceLabel": "杨阿姨鸡蛋灌饼",
-      "longitude": 114.41427,
-      "latitude": 30.51334,
-      "coordinateSource": "项目清单与官方紫荆园周边点位校准"
+      "longitude": 114.402152,
+      "latitude": 30.5174932,
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-yunyuan-pancake",
@@ -195,9 +195,9 @@
       "locationStatus": "大致位置",
       "locationNote": "韵苑茶咖",
       "sourceLabel": "韵苑茶咖山东杂粮煎饼",
-      "longitude": 114.4264653,
-      "latitude": 30.5169053,
-      "coordinateSource": "华中科技大学“一张图”韵苑食堂点位（店铺位于建筑内）"
+      "longitude": 114.4270011,
+      "latitude": 30.5184523,
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-yunyuan-chicken",
@@ -210,9 +210,9 @@
       "locationStatus": "大致位置",
       "locationNote": "韵苑茶咖",
       "sourceLabel": "韵苑茶咖正新鸡排",
-      "longitude": 114.4264653,
-      "latitude": 30.5169053,
-      "coordinateSource": "华中科技大学“一张图”韵苑食堂点位（店铺位于建筑内）"
+      "longitude": 114.4270011,
+      "latitude": 30.5184523,
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-yunyuan-wonton",
@@ -225,9 +225,9 @@
       "locationStatus": "大致位置",
       "locationNote": "韵苑茶咖",
       "sourceLabel": "韵苑茶咖成都抄手",
-      "longitude": 114.4264653,
-      "latitude": 30.5169053,
-      "coordinateSource": "华中科技大学“一张图”韵苑食堂点位（店铺位于建筑内）"
+      "longitude": 114.4270011,
+      "latitude": 30.5184523,
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-riceball",
@@ -238,11 +238,10 @@
       "mapX": 58,
       "mapY": 72,
       "locationStatus": "大致位置",
-      "locationNote": "绝望坡",
-      "sourceLabel": "一捧饭团（绝望坡）",
-      "longitude": 114.4204,
-      "latitude": 30.5151,
-      "coordinateSource": "项目清单“绝望坡”位置线索校准"
+      "sourceLabel": "一捧饭团",
+      "longitude": 114.417635,
+      "latitude": 30.5176297,
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-pizzahut",
@@ -254,9 +253,9 @@
       "mapY": 70,
       "locationStatus": "大致位置",
       "sourceLabel": "必胜客",
-      "longitude": 114.41012,
-      "latitude": 30.5189,
-      "coordinateSource": "公开地址与官方百味小吃城点位校准"
+      "longitude": 114.4186517,
+      "latitude": 30.5171679,
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-mcdonalds",
@@ -268,9 +267,9 @@
       "mapY": 70,
       "locationStatus": "大致位置",
       "sourceLabel": "麦当劳",
-      "longitude": 114.4100331,
-      "latitude": 30.518958,
-      "coordinateSource": "官方百味小吃城点位与公开地址校准"
+      "longitude": 114.4071655,
+      "latitude": 30.518637,
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-burgerking",
@@ -310,9 +309,9 @@
       "mapY": 31,
       "locationStatus": "大致位置",
       "sourceLabel": "菘邻里",
-      "longitude": 114.39905,
-      "latitude": 30.5147,
-      "coordinateSource": "公开报道与官方周边点位校准"
+      "longitude": 114.4012417,
+      "latitude": 30.5166223,
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-songlinli-bainqu",
@@ -325,9 +324,9 @@
       "mapY": 31,
       "locationStatus": "大致位置",
       "sourceLabel": "菘邻里：白拿区",
-      "longitude": 114.39905,
-      "latitude": 30.5147,
-      "coordinateSource": "公开报道与官方周边点位校准"
+      "longitude": 114.4012417,
+      "latitude": 30.5166223,
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-songlinli-maocai",
@@ -340,9 +339,9 @@
       "mapY": 31,
       "locationStatus": "大致位置",
       "sourceLabel": "菘邻里：冒菜",
-      "longitude": 114.39905,
-      "latitude": 30.5147,
-      "coordinateSource": "公开报道与官方周边点位校准"
+      "longitude": 114.4012417,
+      "latitude": 30.5166223,
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-songlinli-chaojijuan",
@@ -355,9 +354,9 @@
       "mapY": 31,
       "locationStatus": "大致位置",
       "sourceLabel": "菘邻里：超吉卷",
-      "longitude": 114.39905,
-      "latitude": 30.5147,
-      "coordinateSource": "公开报道与官方周边点位校准"
+      "longitude": 114.4012417,
+      "latitude": 30.5166223,
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-songlinli-mixian",
@@ -370,9 +369,9 @@
       "mapY": 31,
       "locationStatus": "大致位置",
       "sourceLabel": "菘邻里：米线",
-      "longitude": 114.39905,
-      "latitude": 30.5147,
-      "coordinateSource": "公开报道与官方周边点位校准"
+      "longitude": 114.4012417,
+      "latitude": 30.5166223,
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-songlinli-xiayuyi",
@@ -385,9 +384,9 @@
       "mapY": 31,
       "locationStatus": "大致位置",
       "sourceLabel": "菘邻里：夏威驿",
-      "longitude": 114.39905,
-      "latitude": 30.5147,
-      "coordinateSource": "公开报道与官方周边点位校准"
+      "longitude": 114.4012417,
+      "latitude": 30.5166223,
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-songlinli-dominos",
@@ -400,9 +399,9 @@
       "mapY": 31,
       "locationStatus": "大致位置",
       "sourceLabel": "菘邻里：达美乐",
-      "longitude": 114.39905,
-      "latitude": 30.5147,
-      "coordinateSource": "公开报道与官方周边点位校准"
+      "longitude": 114.4012417,
+      "latitude": 30.5166223,
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     }
   ],
   "recommendations": [
