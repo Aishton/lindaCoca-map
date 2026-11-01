@@ -23,7 +23,7 @@
 
 - [项目文档索引](docs/README.md)
 - [地图与位置数据](docs/map/README.md)：地图结构、坐标来源、状态规则、人工圈点和发布检查。
-- [角色与权限设计（用户与管理员）](docs/roles-and-review.md)：后续游客、贡献者、管理员、维护者和审核工作流。
+- [角色与权限设计（用户与管理员）](docs/roles-and-review.md)：用户与管理员的能力对照、权限边界与审核工作流。
 - [项目整体维护方案](docs/maintenance.md)：团队分工、变更审核、发布回滚、周期性维护和交接。
 - [数据库说明](database/README.md)
 - [后端与 API 说明](server/README.md)
