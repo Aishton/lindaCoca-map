@@ -8,7 +8,12 @@ const state = {
   quickMode: false,
   mapType: 'all',
   selectedMapPlaceId: null,
+  calibrationMode: false,
+  calibrationTargetId: null,
+  calibrations: [],
 };
+
+const calibrationStorageKey = 'hustmap-calibration-draft-v1';
 
 const typePatterns = {
   米饭: /饭|粥|煲/,
@@ -161,6 +166,8 @@ async function loadPlaces() {
 
   $('#home .head > .small').textContent = `已收集 ${state.places.length} 个地点 · ${state.source}`;
   $('#count').textContent = `${state.places.length} 个地点`;
+  loadCalibrationDraft();
+  renderCalibrationPanel();
   renderAllPlaces();
   renderMap();
 }
@@ -205,14 +212,184 @@ function mapKind(place) {
   return place.placeType === 'canteen' ? 'canteen' : 'shop';
 }
 
+function calibrationTargets() {
+  const groups = new Map();
+  for (const place of state.places) {
+    if (place.locationStatus === '已确认' || place.longitude === null || place.latitude === null) continue;
+    const key = `${place.longitude.toFixed(7)}:${place.latitude.toFixed(7)}`;
+    const group = groups.get(key) ?? {
+      id: place.id,
+      placeIds: [],
+      names: [],
+      originalLatitude: place.latitude,
+      originalLongitude: place.longitude,
+    };
+    group.placeIds.push(place.id);
+    group.names.push(place.name);
+    groups.set(key, group);
+  }
+  return [...groups.values()].map(group => {
+    const places = group.placeIds.map(id => state.places.find(place => place.id === id)).filter(Boolean);
+    const parent = places.find(place => place.placeType === 'food_court');
+    const sharedLocation = places.every(place => place.locationNote && place.locationNote === places[0]?.locationNote)
+      ? places[0].locationNote
+      : null;
+    return { ...group, label: parent?.name || sharedLocation || places[0]?.name || group.id };
+  });
+}
+
+function calibrationForPlace(id) {
+  return state.calibrations.find(item => item.placeIds.includes(id)) ?? null;
+}
+
+function effectiveCoordinates(place) {
+  const calibration = calibrationForPlace(place.id);
+  return calibration
+    ? { latitude: calibration.latitude, longitude: calibration.longitude }
+    : { latitude: place.latitude, longitude: place.longitude };
+}
+
+function loadCalibrationDraft() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(calibrationStorageKey) || '[]');
+    const validIds = new Set(state.places.map(place => place.id));
+    state.calibrations = Array.isArray(stored) ? stored.filter(item => (
+      Array.isArray(item.placeIds)
+      && item.placeIds.length
+      && item.placeIds.every(id => validIds.has(id))
+      && Number.isFinite(Number(item.latitude))
+      && Number.isFinite(Number(item.longitude))
+    )).map(item => ({ ...item, latitude: Number(item.latitude), longitude: Number(item.longitude) })) : [];
+  } catch (error) {
+    console.warn('读取校准草稿失败：', error);
+    state.calibrations = [];
+  }
+}
+
+function saveCalibrationDraft() {
+  try {
+    localStorage.setItem(calibrationStorageKey, JSON.stringify(state.calibrations));
+  } catch (error) {
+    console.warn('保存校准草稿失败：', error);
+    toast('浏览器无法保存草稿，请及时下载校准结果');
+  }
+}
+
+function calibrationExport() {
+  return {
+    version: 1,
+    generatedAt: new Date().toISOString(),
+    note: '华科觅食地图浏览器校准草稿，尚未写入线上数据',
+    calibrations: state.calibrations.map(item => ({
+      targetId: item.targetId,
+      label: item.label,
+      placeIds: item.placeIds,
+      names: item.names,
+      latitude: item.latitude,
+      longitude: item.longitude,
+      originalLatitude: item.originalLatitude,
+      originalLongitude: item.originalLongitude,
+    })),
+  };
+}
+
+function renderCalibrationPanel() {
+  const panel = $('#calibration-panel');
+  const select = $('#calibration-target');
+  if (!panel || !select) return;
+  const targets = calibrationTargets();
+  if (!state.calibrationTargetId || !targets.some(target => target.id === state.calibrationTargetId)) {
+    state.calibrationTargetId = targets[0]?.id ?? null;
+  }
+  select.innerHTML = targets.map(target => {
+    const done = state.calibrations.some(item => item.targetId === target.id);
+    return `<option value="${escapeHtml(target.id)}"${target.id === state.calibrationTargetId ? ' selected' : ''}>${done ? '✓ ' : ''}${escapeHtml(target.label)}${target.names.length > 1 ? `（${target.names.length} 个地点）` : ''}</option>`;
+  }).join('');
+  panel.hidden = !state.calibrationMode;
+  $('#calibration-toggle').setAttribute('aria-pressed', String(state.calibrationMode));
+  $('#campus-map').classList.toggle('calibration-active', state.calibrationMode);
+  const current = state.calibrations.find(item => item.targetId === state.calibrationTargetId);
+  const status = current
+    ? `<strong>当前已记录</strong><br>${current.latitude.toFixed(7)}, ${current.longitude.toFixed(7)}`
+    : '<strong>当前尚未记录</strong><br>请在地图上单击正确位置';
+  $('#calibration-status').innerHTML = `${status}<br>总进度：${state.calibrations.length} / ${targets.length}`;
+  $('#calibration-undo').disabled = !current;
+  $('#calibration-copy').disabled = state.calibrations.length === 0;
+  $('#calibration-download').disabled = state.calibrations.length === 0;
+  $('#calibration-clear').disabled = state.calibrations.length === 0;
+}
+
+function focusCalibrationTarget() {
+  const target = calibrationTargets().find(item => item.id === state.calibrationTargetId);
+  if (!target || !leafletMap) return;
+  const marker = target.placeIds.map(id => leafletMarkerByPlace.get(id)).find(Boolean);
+  const calibration = state.calibrations.find(item => item.targetId === target.id);
+  const point = marker?.getLatLng() ?? (calibration
+    ? { lat: calibration.latitude, lng: calibration.longitude }
+    : { lat: target.originalLatitude, lng: target.originalLongitude });
+  leafletMap.flyTo(point, Math.max(17, leafletMap.getZoom()), { duration: 0.55 });
+}
+
+function recordCalibration(latitude, longitude) {
+  const target = calibrationTargets().find(item => item.id === state.calibrationTargetId);
+  if (!target) return toast('请先选择一个待校准地点');
+  const record = {
+    ...target,
+    targetId: target.id,
+    latitude: Number(latitude.toFixed(7)),
+    longitude: Number(longitude.toFixed(7)),
+  };
+  state.calibrations = state.calibrations.filter(item => item.targetId !== target.id);
+  state.calibrations.push(record);
+  saveCalibrationDraft();
+  renderMap();
+  renderCalibrationPanel();
+  toast(`已记录：${target.label}`);
+}
+
+async function copyCalibrationResult() {
+  const text = JSON.stringify(calibrationExport(), null, 2);
+  try {
+    if (navigator.clipboard?.writeText) await navigator.clipboard.writeText(text);
+    else {
+      const textarea = document.createElement('textarea');
+      textarea.value = text;
+      textarea.style.position = 'fixed';
+      textarea.style.opacity = '0';
+      document.body.append(textarea);
+      textarea.select();
+      document.execCommand('copy');
+      textarea.remove();
+    }
+    toast('校准结果已复制，可以直接发给项目维护者');
+  } catch (error) {
+    console.warn('复制校准结果失败：', error);
+    toast('复制失败，请使用“下载 JSON”');
+  }
+}
+
+function downloadCalibrationResult() {
+  const blob = new Blob([JSON.stringify(calibrationExport(), null, 2)], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `hustmap-calibration-${new Date().toISOString().slice(0, 10)}.json`;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+  toast('校准结果已下载');
+}
+
 function mapGroups() {
   const groups = new Map();
   for (const place of state.places) {
-    if (place.longitude === null || place.latitude === null) continue;
-    const key = `${place.longitude.toFixed(5)}:${place.latitude.toFixed(5)}`;
+    const coordinates = effectiveCoordinates(place);
+    if (coordinates.longitude === null || coordinates.latitude === null) continue;
+    const key = `${coordinates.longitude.toFixed(5)}:${coordinates.latitude.toFixed(5)}`;
     const group = groups.get(key) ?? {
-      longitude: place.longitude,
-      latitude: place.latitude,
+      longitude: coordinates.longitude,
+      latitude: coordinates.latitude,
       places: [],
     };
     group.places.push(place);
@@ -261,6 +438,10 @@ function initializeLeafletMap() {
     state.selectedMapPlaceId = null;
     updateLeafletMarkerIcons();
   });
+  leafletMap.on('click', event => {
+    if (!state.calibrationMode) return;
+    recordCalibration(event.latlng.lat, event.latlng.lng);
+  });
   setTimeout(() => container.classList.add('is-ready'), 1800);
   return true;
 }
@@ -269,9 +450,10 @@ function markerIcon(group) {
   const primary = group.places.find(place => place.placeType === 'canteen') ?? group.places[0];
   const approximate = group.places.some(place => place.locationStatus !== '已确认');
   const selected = group.places.some(place => place.id === state.selectedMapPlaceId);
+  const calibrated = group.places.some(place => calibrationForPlace(place.id));
   return L.divIcon({
     className: 'food-map-icon',
-    html: `<span class="geo-marker ${mapKind(primary) === 'shop' ? 'shop' : ''} ${approximate ? 'approximate' : ''} ${selected ? 'selected' : ''}"><span>${group.places.length > 1 ? group.places.length : '•'}</span></span>`,
+    html: `<span class="geo-marker ${mapKind(primary) === 'shop' ? 'shop' : ''} ${approximate ? 'approximate' : ''} ${selected ? 'selected' : ''} ${calibrated ? 'calibrated' : ''}"><span>${group.places.length > 1 ? group.places.length : '•'}</span></span>`,
     iconSize: [38, 38],
     iconAnchor: [19, 38],
     popupAnchor: [0, -34],
@@ -310,6 +492,7 @@ function renderMap() {
       title: names,
       alt: names,
       keyboard: true,
+      bubblingMouseEvents: false,
     });
     marker.foodGroup = group;
     marker.bindPopup(mapPopupContent(group.places), { maxWidth: 300, minWidth: 220 });
@@ -469,6 +652,45 @@ function renderAllPlaces() {
 function setupPage() {
   $('#place-search').addEventListener('input', renderAllPlaces);
   $('#map-search').addEventListener('input', renderMap);
+  $('#calibration-toggle').addEventListener('click', () => {
+    state.calibrationMode = !state.calibrationMode;
+    closeMapPopup();
+    renderCalibrationPanel();
+    if (state.calibrationMode) {
+      state.mapType = 'all';
+      $('#map-search').value = '';
+      document.querySelectorAll('#map-filters [data-map-type]').forEach(button => {
+        button.setAttribute('aria-pressed', String(button.dataset.mapType === 'all'));
+      });
+      renderMap();
+      setTimeout(focusCalibrationTarget, 80);
+      toast('校准模式已开启：选择地点后单击地图');
+    }
+  });
+  $('#calibration-target').addEventListener('change', event => {
+    state.calibrationTargetId = event.target.value;
+    renderCalibrationPanel();
+    focusCalibrationTarget();
+  });
+  $('#calibration-undo').addEventListener('click', () => {
+    state.calibrations = state.calibrations.filter(item => item.targetId !== state.calibrationTargetId);
+    saveCalibrationDraft();
+    renderMap();
+    renderCalibrationPanel();
+    focusCalibrationTarget();
+    toast('已撤销当前地点的校准草稿');
+  });
+  $('#calibration-copy').addEventListener('click', copyCalibrationResult);
+  $('#calibration-download').addEventListener('click', downloadCalibrationResult);
+  $('#calibration-clear').addEventListener('click', () => {
+    if (!confirm('确定清空当前浏览器中的全部校准草稿吗？')) return;
+    state.calibrations = [];
+    saveCalibrationDraft();
+    renderMap();
+    renderCalibrationPanel();
+    focusCalibrationTarget();
+    toast('全部校准草稿已清空');
+  });
   $('#map-filters').addEventListener('click', event => {
     const button = event.target.closest('[data-map-type]');
     if (!button) return;
