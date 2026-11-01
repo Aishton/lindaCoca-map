@@ -173,13 +173,28 @@ function toast(message) {
   toast.timer = setTimeout(() => element.classList.remove('show'), 2300);
 }
 
-function go(view) {
+function go(view, { resetScroll = true } = {}) {
   document.querySelectorAll('.view').forEach(element => {
     element.classList.toggle('active', element.id === view);
   });
   if (view === 'admin') renderAllPlaces();
-  if (view === 'map') renderMap();
-  scrollTo({ top: 0, behavior: 'smooth' });
+  if (view === 'home') {
+    renderMap();
+    setTimeout(() => leafletMap?.invalidateSize(), 0);
+  }
+  if (resetScroll) scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function scrollToMap(behavior = 'smooth') {
+  go('home', { resetScroll: false });
+  setTimeout(() => {
+    const mapSection = $('#home-map');
+    if (mapSection) {
+      const top = mapSection.getBoundingClientRect().top + window.scrollY - 18;
+      window.scrollTo({ top, behavior });
+    }
+    leafletMap?.invalidateSize();
+  }, 80);
 }
 
 let leafletMap = null;
@@ -336,13 +351,13 @@ function focusPlaceOnMap(id) {
   document.querySelectorAll('#map-filters [data-map-type]').forEach(button => {
     button.setAttribute('aria-pressed', String(button.dataset.mapType === 'all'));
   });
-  go('map');
+  scrollToMap();
   setTimeout(() => {
     const marker = leafletMarkerByPlace.get(place.id) ?? leafletMarkerByPlace.get(original.id);
     if (!marker) return;
     leafletMap.flyTo(marker.getLatLng(), Math.max(17, leafletMap.getZoom()), { duration: 0.65 });
     showMapPopup([place.id, original.id]);
-  }, 80);
+  }, 180);
 }
 
 function updateMealButtons() {
@@ -431,8 +446,10 @@ function detail(id, from = 'results') {
   $('#feedback').onclick = () => toast('反馈提交功能尚未接入，请先联系项目组');
   $('#detailbox [data-locate]').onclick = event => focusPlaceOnMap(event.currentTarget.dataset.locate);
   const back = $('#detail .back');
-  back.dataset.go = from;
-  back.textContent = from === 'admin' ? '← 返回全部地点' : from === 'map' ? '← 返回校园地图' : '← 返回推荐结果';
+  const returnToMap = from === 'map';
+  back.dataset.go = returnToMap ? 'home' : from;
+  back.dataset.returnMap = String(returnToMap);
+  back.textContent = from === 'admin' ? '← 返回全部地点' : returnToMap ? '← 返回首页地图' : '← 返回推荐结果';
   go('detail');
 }
 
@@ -467,7 +484,13 @@ function setupPage() {
   });
 
   document.querySelectorAll('[data-go]').forEach(button => {
-    button.addEventListener('click', () => go(button.dataset.go));
+    button.addEventListener('click', () => {
+      if (button.dataset.returnMap === 'true') scrollToMap();
+      else go(button.dataset.go);
+    });
+  });
+  document.querySelectorAll('[data-scroll-map]').forEach(button => {
+    button.addEventListener('click', () => scrollToMap());
   });
   $('#meal').addEventListener('click', event => {
     const button = event.target.closest('[data-v]');
@@ -499,5 +522,6 @@ function setupPage() {
 
 setupPage();
 const initialView = location.hash.slice(1);
-if (['home', 'map', 'admin'].includes(initialView)) go(initialView);
+if (initialView === 'map') scrollToMap('auto');
+else if (['home', 'admin'].includes(initialView)) go(initialView);
 loadPlaces();
