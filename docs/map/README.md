@@ -57,7 +57,7 @@ GitHub Pages 无法运行 Node.js，线上静态页面直接读取 `database/see
 
 校准草稿包含目标地点、同组地点 ID、新旧经纬度和 `locationStatus: "大致位置"`。清除浏览器网站数据会删除草稿。
 
-未来将用户提交接入后端审核队列的方案见[角色、权限与纠错审核设计](../roles-and-review.md)。
+未来将用户提交接入后端审核队列的方案见[角色与权限设计（用户与管理员）](../roles-and-review.md)。
 
 ## 应用校准结果
 
