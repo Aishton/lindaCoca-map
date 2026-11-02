@@ -9,7 +9,13 @@ await import('../database/init.mjs');
 const database = new DatabaseSync(databasePath);
 database.exec('PRAGMA foreign_keys = ON');
 
-const port = Number(process.env.PORT ?? 3000);
+function argumentValue(name) {
+  const index = process.argv.indexOf(name);
+  return index >= 0 ? process.argv[index + 1] : undefined;
+}
+
+const port = Number(argumentValue('--port') ?? process.env.PORT ?? 3000);
+const host = argumentValue('--host') ?? '127.0.0.1';
 if (!Number.isInteger(port) || port < 1 || port > 65535) {
   console.error('PORT 必须是 1 到 65535 之间的整数');
   database.close();
@@ -17,9 +23,9 @@ if (!Number.isInteger(port) || port < 1 || port > 65535) {
 }
 
 const server = createApp(database);
-server.listen(port, '127.0.0.1', () => {
-  console.log(`觅食地图本地服务已启动：http://127.0.0.1:${port}/`);
-  console.log(`数据库接口：http://127.0.0.1:${port}/api/places`);
+server.listen(port, host, () => {
+  console.log(`觅食地图本地服务已启动：http://${host}:${port}/`);
+  console.log(`数据库接口：http://${host}:${port}/api/places`);
 });
 
 server.on('error', error => {

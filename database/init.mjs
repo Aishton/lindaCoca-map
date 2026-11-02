@@ -21,6 +21,38 @@ if (!placeColumns.has('location_status')) {
   database.exec("ALTER TABLE places ADD COLUMN location_status TEXT NOT NULL DEFAULT '未定位'");
 }
 
+const feedbackTableSql = database.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'feedback'").get()?.sql ?? '';
+if (!feedbackTableSql.includes('tracking_code') || !feedbackTableSql.includes('名称有误')) {
+  database.exec(`
+    ALTER TABLE feedback RENAME TO feedback_legacy;
+    CREATE TABLE feedback (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      tracking_code TEXT UNIQUE,
+      place_id TEXT REFERENCES places(id),
+      proposed_place_name TEXT,
+      feedback_type TEXT NOT NULL CHECK (feedback_type IN (
+        '还在这里', '位置有误', '名称有误', '楼层入口错误', '菜品信息有误', '营业时间有误',
+        '暂停营业', '新增位置', '其他'
+      )),
+      details TEXT NOT NULL CHECK (length(trim(details)) > 0),
+      proposed_payload TEXT,
+      review_status TEXT NOT NULL DEFAULT '待审核' CHECK (review_status IN ('待审核', '已批准', '已驳回')),
+      review_note TEXT,
+      submitted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      reviewed_at TEXT,
+      CHECK (place_id IS NOT NULL OR proposed_place_name IS NOT NULL)
+    );
+    INSERT INTO feedback (id, place_id, proposed_place_name, feedback_type, details, review_status, submitted_at, reviewed_at)
+      SELECT id, place_id, proposed_place_name,
+        CASE WHEN feedback_type = '菜单或营业信息错误' THEN '其他' ELSE feedback_type END,
+        details, review_status, submitted_at, reviewed_at
+      FROM feedback_legacy;
+    DROP TABLE feedback_legacy;
+    CREATE INDEX feedback_review_status ON feedback (review_status);
+    CREATE UNIQUE INDEX feedback_tracking_code ON feedback (tracking_code);
+  `);
+}
+
 const addPlace = database.prepare(`
   INSERT INTO places
     (id, name, place_type, source_group, parent_id, campus_area, location_note,

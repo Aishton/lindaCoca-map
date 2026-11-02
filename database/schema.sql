@@ -35,7 +35,6 @@ CREATE TABLE IF NOT EXISTS recommendations (
     name TEXT NOT NULL CHECK (length(trim(name)) > 0),
     floor INTEGER CHECK (floor IS NULL OR floor BETWEEN 1 AND 99),
     note TEXT,
-    price_level TEXT CHECK (price_level IN ('low', 'mid', 'high')),
     meal_period TEXT CHECK (meal_period IN ('lunch', 'dinner', 'all_day')),
     source_label TEXT NOT NULL,
     verification_status TEXT NOT NULL DEFAULT '待确认'
@@ -47,18 +46,22 @@ CREATE INDEX IF NOT EXISTS recommendations_place_id ON recommendations (place_id
 
 CREATE TABLE IF NOT EXISTS feedback (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    tracking_code TEXT UNIQUE,
     place_id TEXT REFERENCES places(id),
     proposed_place_name TEXT,
     feedback_type TEXT NOT NULL CHECK (feedback_type IN (
-        '还在这里', '位置有误', '楼层入口错误', '菜单或营业信息错误',
+        '还在这里', '位置有误', '名称有误', '楼层入口错误', '菜品信息有误', '营业时间有误',
         '暂停营业', '新增位置', '其他'
     )),
     details TEXT NOT NULL CHECK (length(trim(details)) > 0),
+    proposed_payload TEXT,
     review_status TEXT NOT NULL DEFAULT '待审核'
         CHECK (review_status IN ('待审核', '已批准', '已驳回')),
+    review_note TEXT,
     submitted_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     reviewed_at TEXT,
     CHECK (place_id IS NOT NULL OR proposed_place_name IS NOT NULL)
 );
 
 CREATE INDEX IF NOT EXISTS feedback_review_status ON feedback (review_status);
+CREATE UNIQUE INDEX IF NOT EXISTS feedback_tracking_code ON feedback (tracking_code);

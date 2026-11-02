@@ -47,6 +47,35 @@ test('地点列表和详情从 SQLite 返回，缺失地点返回 404', async ()
     assert.equal(invalid.status, 400);
     assert.equal((await invalid.json()).error, 'invalid_id');
 
+    const feedbackResponse = await fetch(`${base}/api/feedbacks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        placeId: 'canteen-demo',
+        feedbackType: '位置有误',
+        details: '入口已经调整，请重新核对地图位置。',
+        proposedPayload: { latitude: 30.51, longitude: 114.41 },
+      }),
+    });
+    assert.equal(feedbackResponse.status, 201);
+    const feedback = (await feedbackResponse.json()).feedback;
+    assert.match(feedback.trackingCode, /^FB-\d{8}-[A-F0-9]{6}$/);
+    assert.equal(feedback.status, '待审核');
+
+    const feedbackStatus = await fetch(`${base}/api/feedbacks/${feedback.trackingCode}`);
+    assert.equal(feedbackStatus.status, 200);
+    assert.equal((await feedbackStatus.json()).feedback.feedbackType, '位置有误');
+
+    const missingFeedback = await fetch(`${base}/api/feedbacks/FB-20000101-000000`);
+    assert.equal(missingFeedback.status, 404);
+
+    const invalidFeedback = await fetch(`${base}/api/feedbacks`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ placeId: 'canteen-demo', feedbackType: '未知类型', details: '测试' }),
+    });
+    assert.equal(invalidFeedback.status, 400);
+
     const write = await fetch(`${base}/api/places`, { method: 'POST' });
     assert.equal(write.status, 405);
 
