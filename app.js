@@ -137,6 +137,7 @@ function fromSeed(seed) {
     parentId: place.parentId ?? null,
     campusArea: place.campusArea ?? null,
     locationNote: place.locationNote ?? null,
+    mealPeriod: place.mealPeriod ?? null,
     mapX: place.mapX ?? null,
     mapY: place.mapY ?? null,
     longitude: place.longitude ?? null,
@@ -595,8 +596,10 @@ function updateMealButtons() {
 }
 
 function candidates(quick) {
-  if (quick) return [...state.places];
-  return state.places.filter(place => {
+  const matchingMeal = state.places.filter(place =>
+    !place.mealPeriod || place.mealPeriod === 'both' || place.mealPeriod === state.meal);
+  if (quick) return matchingMeal;
+  return matchingMeal.filter(place => {
     const areaMatches = state.area === 'all' || place.campusArea === state.area;
     const typeMatches = state.placeType === 'all' || mapKind(place) === state.placeType;
     const preferenceMatches = state.types.size === 0
@@ -623,8 +626,8 @@ function recommend(quick) {
   }
   state.results = shuffled(candidates(quick)).slice(0, 3).map(place => chooseResult(place, quick));
   $('#resulttext').textContent = quick
-    ? '从项目组清单中随机挑选；实际营业时段请到店确认。'
-    : '按区域、地点类型和菜名偏好筛选；午餐／晚餐仅作场景标记，营业时段待核实。';
+    ? '按已收集的午餐／晚餐餐次随机挑选；实际营业时间请到店确认。'
+    : '按餐次、区域、地点类型和菜名偏好筛选；实际营业时间请到店确认。';
   $('#meta').textContent = quick
     ? `${mealLabel()}想吃什么 · ${state.source}`
     : `${areaLabel()} · ${placeTypeLabel()} · ${state.source}`;
@@ -885,7 +888,7 @@ function detail(id, from = 'results') {
   $('#detailbox').innerHTML = `<div class="detailhero"><div><span class="zone pending">${escapeHtml(placeLabel(place))}</span><h2>${escapeHtml(place.name)}</h2>${featured ? `<p class="dish">本次推荐：${escapeHtml(featured.name)}</p>` : ''}</div><button id="feedback" class="primary">纠错反馈</button></div>
     <div class="details">
       <div class="detailitem"><b>位置线索</b><span>${escapeHtml(locationFor(place, featured))}<br><span class="small location-status">${escapeHtml(place.locationStatus || '未定位')}</span></span><button class="secondary map-location-button" data-locate="${escapeHtml(place.id)}">在地图上查看</button></div>
-      <div class="detailitem"><b>午餐／晚餐营业时段</b><span>待确认</span></div>
+      <div class="detailitem"><b>午餐／晚餐营业时段</b><span>${place.mealPeriod === 'dinner' ? '晚餐' : place.mealPeriod === 'lunch' ? '午餐' : place.mealPeriod === 'both' ? '午餐／晚餐' : '待确认'}</span></div>
       <div class="detailitem"><b>信息状态</b><span>${escapeHtml(place.verificationStatus || '待确认')}</span></div>
       <div class="detailitem"><b>最近确认</b><span>${escapeHtml(place.lastConfirmedAt || '暂无确认记录')}</span></div>
       <div class="detailitem"><b>来源分组</b><span>${escapeHtml(place.sourceGroup)}</span></div>

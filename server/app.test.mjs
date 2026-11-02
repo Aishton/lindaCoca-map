@@ -10,10 +10,10 @@ test('地点列表和详情从 SQLite 返回，缺失地点返回 404', async ()
   database.prepare(`
     INSERT INTO places
       (id, name, place_type, source_group, source_label, map_x, map_y,
-       longitude, latitude, coordinate_source, location_status)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       longitude, latitude, coordinate_source, location_status, meal_period)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run('canteen-demo', '示例食堂', 'canteen', '食堂', '示例食堂', 42, 58,
-    114.4, 30.5, '测试坐标', '大致位置');
+    114.4, 30.5, '测试坐标', '大致位置', 'both');
   database.prepare(`
     INSERT INTO recommendations (id, place_id, name, floor, source_label)
     VALUES (?, ?, ?, ?, ?)
@@ -34,6 +34,7 @@ test('地点列表和详情从 SQLite 返回，缺失地点返回 404', async ()
     assert.equal(data.places[0].longitude, 114.4);
     assert.equal(data.places[0].coordinateSource, '测试坐标');
     assert.equal(data.places[0].locationStatus, '大致位置');
+    assert.equal(data.places[0].mealPeriod, 'both');
 
     const detail = await fetch(`${base}/api/places/canteen-demo`);
     assert.equal(detail.status, 200);
