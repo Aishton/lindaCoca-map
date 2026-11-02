@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS recommendations (
     name TEXT NOT NULL CHECK (length(trim(name)) > 0),
     floor INTEGER CHECK (floor IS NULL OR floor BETWEEN 1 AND 99),
     note TEXT,
-    meal_period TEXT CHECK (meal_period IN ('lunch', 'dinner', 'all_day')),
+    meal_period TEXT CHECK (meal_period IN ('breakfast', 'lunch', 'dinner', 'both', 'all_day')),
     source_label TEXT NOT NULL,
     verification_status TEXT NOT NULL DEFAULT '待确认'
         CHECK (verification_status IN ('待确认', '已核实')),

@@ -55,7 +55,18 @@ function placeLabel(place) {
 }
 
 function dishLabel(item) {
-  return `${item.floor ? `${item.floor} 楼 · ` : ''}${item.name}`;
+  return `${item.floor ? `${item.floor} 楼 · ` : ''}${item.name}${item.mealPeriod ? `（${periodLabel(item.mealPeriod)}）` : ''}`;
+}
+
+function periodLabel(period) {
+  return ({breakfast:'早餐', lunch:'午餐', dinner:'晚餐', both:'午餐／晚餐', all_day:'全天'})[period] || '待确认';
+}
+
+function placePeriodLabel(place, featured) {
+  if (featured?.mealPeriod) return periodLabel(featured.mealPeriod);
+  const periods = new Set(place.recommendations.map(item => item.mealPeriod).filter(Boolean));
+  if (!periods.size) return '午餐／晚餐';
+  return [...periods].map(periodLabel).join('、');
 }
 
 function dishesOf(place) {
@@ -125,9 +136,9 @@ function fromSeed(seed) {
       name: item.name,
       floor: item.floor ?? null,
       note: item.note ?? null,
-      mealPeriod: null,
+      mealPeriod: item.mealPeriod ?? null,
       sourceLabel: item.sourceLabel,
-      verificationStatus: '待确认',
+      verificationStatus: item.verificationStatus === '已核实' ? '已确认' : (item.verificationStatus || '待确认'),
     });
   }
   return seed.places.map(place => ({
@@ -145,8 +156,8 @@ function fromSeed(seed) {
     coordinateSource: place.coordinateSource ?? null,
     locationStatus: place.locationStatus ?? '未定位',
     sourceLabel: place.sourceLabel,
-    verificationStatus: '待确认',
-    lastConfirmedAt: null,
+    verificationStatus: place.verificationStatus === '已核实' ? '已确认' : (place.verificationStatus || '待确认'),
+    lastConfirmedAt: place.lastConfirmedAt ?? null,
     recommendations: byPlace.get(place.id) ?? [],
   }));
 }
@@ -1017,7 +1028,7 @@ function detail(id, from = 'results') {
   $('#detailbox').innerHTML = `<div class="detailhero"><div><span class="zone pending">${escapeHtml(placeLabel(place))}</span><h2>${escapeHtml(place.name)}</h2>${featured ? `<p class="dish">本次推荐：${escapeHtml(featured.name)}</p>` : ''}</div><button id="feedback" class="primary">纠错反馈</button></div>
     <div class="details">
       <div class="detailitem"><b>位置线索</b><span>${escapeHtml(locationFor(place, featured))}<br><span class="small location-status">${escapeHtml(place.locationStatus || '未定位')}</span></span><button class="secondary map-location-button" data-locate="${escapeHtml(place.id)}">在地图上查看</button></div>
-      <div class="detailitem"><b>午餐／晚餐营业时段</b><span>待确认</span></div>
+      <div class="detailitem"><b>用餐餐次</b><span>${escapeHtml(placePeriodLabel(place, featured))}</span></div>
       <div class="detailitem"><b>信息状态</b><span>${escapeHtml(place.verificationStatus || '待确认')}</span></div>
       <div class="detailitem"><b>最近确认</b><span>${escapeHtml(place.lastConfirmedAt || '暂无确认记录')}</span></div>
       <div class="detailitem"><b>来源分组</b><span>${escapeHtml(place.sourceGroup)}</span></div>
