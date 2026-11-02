@@ -55,6 +55,9 @@ if (!feedbackTableSql.includes('tracking_code') || !feedbackTableSql.includes('�
   `);
 }
 
+// 旧数据库需先完成反馈表迁移，再创建依赖新字段的索引。
+database.exec('CREATE UNIQUE INDEX IF NOT EXISTS feedback_tracking_code ON feedback (tracking_code)');
+
 const addPlace = database.prepare(`
   INSERT INTO places
     (id, name, place_type, source_group, parent_id, campus_area, location_note,

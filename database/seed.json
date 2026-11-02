@@ -402,6 +402,30 @@
       "longitude": 114.4012417,
       "latitude": 30.5166223,
       "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
+    },
+    {
+      "id": "canteen-baihuiyuan",
+      "name": "百惠园食堂",
+      "placeType": "canteen",
+      "sourceGroup": "食堂",
+      "locationStatus": "未定位",
+      "sourceLabel": "百惠园"
+    },
+    {
+      "id": "canteen-xueyi",
+      "name": "学一食堂",
+      "placeType": "canteen",
+      "sourceGroup": "食堂",
+      "locationStatus": "未定位",
+      "sourceLabel": "学一"
+    },
+    {
+      "id": "canteen-yunjiu",
+      "name": "韵酒食堂",
+      "placeType": "canteen",
+      "sourceGroup": "食堂",
+      "locationStatus": "未定位",
+      "sourceLabel": "韵酒"
     }
   ],
   "recommendations": [
@@ -677,6 +701,190 @@
       "placeId": "canteen-dongjiaogong",
       "name": "芝士焗红薯",
       "sourceLabel": "芝士焗红薯"
+    },
+    {
+      "id": "rec-jijinyuan-03",
+      "placeId": "canteen-jijinyuan",
+      "name": "桂林米粉",
+      "note": "午餐／晚餐",
+      "sourceLabel": "桂林米粉"
+    },
+    {
+      "id": "rec-jijinyuan-04",
+      "placeId": "canteen-jijinyuan",
+      "name": "蔡明纬",
+      "note": "午餐／晚餐",
+      "sourceLabel": "蔡明纬"
+    },
+    {
+      "id": "rec-jijinyuan-05",
+      "placeId": "canteen-jijinyuan",
+      "name": "菠萝炒饭",
+      "note": "午餐／晚餐",
+      "sourceLabel": "菠萝炒饭"
+    },
+    {
+      "id": "rec-baihuiyuan-01",
+      "placeId": "canteen-baihuiyuan",
+      "floor": 1,
+      "name": "烤肉拌饭",
+      "note": "午餐／晚餐",
+      "sourceLabel": "一楼烤肉拌饭"
+    },
+    {
+      "id": "rec-baihuiyuan-02",
+      "placeId": "canteen-baihuiyuan",
+      "floor": 1,
+      "name": "襄阳牛肉面",
+      "note": "午餐／晚餐",
+      "sourceLabel": "一楼襄阳牛肉面"
+    },
+    {
+      "id": "rec-baihuiyuan-03",
+      "placeId": "canteen-baihuiyuan",
+      "floor": 3,
+      "name": "鸡排饭",
+      "note": "午餐／晚餐",
+      "sourceLabel": "三楼鸡排饭"
+    },
+    {
+      "id": "rec-xiyi-05",
+      "placeId": "canteen-xiyi",
+      "floor": 1,
+      "name": "馄饨酸辣粉",
+      "note": "午餐／晚餐",
+      "sourceLabel": "一楼馄饨酸辣粉"
+    },
+    {
+      "id": "rec-jixianlou-02",
+      "placeId": "canteen-jixianlou",
+      "name": "油泼面",
+      "note": "午餐／晚餐",
+      "sourceLabel": "油泼面"
+    },
+    {
+      "id": "rec-jixianlou-03",
+      "placeId": "canteen-jixianlou",
+      "name": "炸鸡腿",
+      "note": "午餐／晚餐",
+      "sourceLabel": "炸鸡腿"
+    },
+    {
+      "id": "rec-jixianlou-04",
+      "placeId": "canteen-jixianlou",
+      "name": "糊汤粉",
+      "note": "午餐／晚餐",
+      "sourceLabel": "糊汤粉"
+    },
+    {
+      "id": "rec-jixianlou-05",
+      "placeId": "canteen-jixianlou",
+      "name": "鸡蛋奶饼",
+      "note": "早餐",
+      "sourceLabel": "鸡蛋奶饼（早饭）"
+    },
+    {
+      "id": "rec-dongjiaogong-03",
+      "placeId": "canteen-dongjiaogong",
+      "name": "番茄鱼面",
+      "note": "午餐／晚餐",
+      "sourceLabel": "番茄鱼面"
+    },
+    {
+      "id": "rec-xueer-03",
+      "placeId": "canteen-xueer",
+      "floor": 2,
+      "name": "鸡公煲",
+      "note": "午餐／晚餐",
+      "sourceLabel": "二楼鸡公煲"
+    },
+    {
+      "id": "rec-xueer-04",
+      "placeId": "canteen-xueer",
+      "floor": 2,
+      "name": "赣味小炒",
+      "note": "午餐／晚餐",
+      "sourceLabel": "二楼赣味小炒"
+    },
+    {
+      "id": "rec-xueer-05",
+      "placeId": "canteen-xueer",
+      "floor": 2,
+      "name": "滑蛋饭",
+      "note": "午餐／晚餐",
+      "sourceLabel": "二楼滑蛋饭"
+    },
+    {
+      "id": "rec-xueer-06",
+      "placeId": "canteen-xueer",
+      "floor": 2,
+      "name": "南昌拌粉",
+      "note": "午餐／晚餐",
+      "sourceLabel": "二楼南昌拌粉"
+    },
+    {
+      "id": "rec-xueer-07",
+      "placeId": "canteen-xueer",
+      "floor": 2,
+      "name": "药膳卤肉饭",
+      "note": "午餐／晚餐",
+      "sourceLabel": "二楼药膳卤肉饭"
+    },
+    {
+      "id": "rec-xueyi-01",
+      "placeId": "canteen-xueyi",
+      "floor": 1,
+      "name": "云南米线",
+      "note": "午餐／晚餐",
+      "sourceLabel": "一楼云南米线"
+    },
+    {
+      "id": "rec-yunjiu-01",
+      "placeId": "canteen-yunjiu",
+      "floor": 1,
+      "name": "糊米酒",
+      "note": "早餐",
+      "sourceLabel": "一楼糊米酒（早饭）"
+    },
+    {
+      "id": "rec-yunjiu-02",
+      "placeId": "canteen-yunjiu",
+      "floor": 1,
+      "name": "麻辣烫",
+      "note": "午餐／晚餐",
+      "sourceLabel": "一楼麻辣烫"
+    },
+    {
+      "id": "rec-yunjiu-03",
+      "placeId": "canteen-yunjiu",
+      "floor": 1,
+      "name": "蒜香猪脚饭",
+      "note": "午餐／晚餐",
+      "sourceLabel": "一楼蒜香猪脚饭"
+    },
+    {
+      "id": "rec-yunjiu-04",
+      "placeId": "canteen-yunjiu",
+      "floor": 2,
+      "name": "烧鸡饭",
+      "note": "午餐／晚餐",
+      "sourceLabel": "二楼烧鸡饭"
+    },
+    {
+      "id": "rec-yunjiu-05",
+      "placeId": "canteen-yunjiu",
+      "floor": 2,
+      "name": "牛肉油泼面",
+      "note": "午餐／晚餐",
+      "sourceLabel": "二楼牛肉油泼面"
+    },
+    {
+      "id": "rec-yunjiu-06",
+      "placeId": "canteen-yunjiu",
+      "floor": 2,
+      "name": "臭豆腐",
+      "note": "午餐／晚餐",
+      "sourceLabel": "二楼臭豆腐"
     }
   ]
 }
