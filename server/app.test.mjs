@@ -10,16 +10,16 @@ test('地点列表和详情从 SQLite 返回，缺失地点返回 404', async ()
   database.prepare(`
     INSERT INTO places
       (id, name, place_type, source_group, source_label, map_x, map_y,
-       longitude, latitude, coordinate_source, location_status, meal_period)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+       longitude, latitude, coordinate_source, location_status)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run('canteen-demo', '示例食堂', 'canteen', '食堂', '示例食堂', 42, 58,
-    114.4, 30.5, '测试坐标', '大致位置', 'both');
+    114.4, 30.5, '测试坐标', '大致位置');
   database.prepare(`
     INSERT INTO recommendations (id, place_id, name, floor, source_label)
     VALUES (?, ?, ?, ?, ?)
   `).run('rec-demo', 'canteen-demo', '牛肉面', 2, '二楼牛肉面');
 
-  const server = createApp(database);
+  const server = createApp(database, { adminUsername: 'reviewer', adminPassword: 'test-password-123' });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${server.address().port}`;
 
@@ -34,7 +34,6 @@ test('地点列表和详情从 SQLite 返回，缺失地点返回 404', async ()
     assert.equal(data.places[0].longitude, 114.4);
     assert.equal(data.places[0].coordinateSource, '测试坐标');
     assert.equal(data.places[0].locationStatus, '大致位置');
-    assert.equal(data.places[0].mealPeriod, 'both');
 
     const detail = await fetch(`${base}/api/places/canteen-demo`);
     assert.equal(detail.status, 200);
@@ -66,6 +65,37 @@ test('地点列表和详情从 SQLite 返回，缺失地点返回 404', async ()
     const feedbackStatus = await fetch(`${base}/api/feedbacks/${feedback.trackingCode}`);
     assert.equal(feedbackStatus.status, 200);
     assert.equal((await feedbackStatus.json()).feedback.feedbackType, '位置有误');
+
+    const blockedReview = await fetch(`${base}/api/admin/feedbacks`);
+    assert.equal(blockedReview.status, 401);
+
+    const badLogin = await fetch(`${base}/api/admin/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'reviewer', password: 'wrong' }),
+    });
+    assert.equal(badLogin.status, 401);
+
+    const login = await fetch(`${base}/api/admin/login`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username: 'reviewer', password: 'test-password-123' }),
+    });
+    assert.equal(login.status, 200);
+    const token = (await login.json()).token;
+
+    const reviewList = await fetch(`${base}/api/admin/feedbacks`, { headers: { Authorization: `Bearer ${token}` } });
+    assert.equal(reviewList.status, 200);
+    assert.equal((await reviewList.json()).feedbacks.length, 1);
+
+    const decision = await fetch(`${base}/api/admin/feedbacks/${feedback.trackingCode}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ decision: 'approve', reviewNote: '已核对现场信息，采纳修改。' }),
+    });
+    assert.equal(decision.status, 200);
+    assert.equal((await decision.json()).feedback.status, '已批准');
+
+    const reviewedStatus = await fetch(`${base}/api/feedbacks/${feedback.trackingCode}`);
+    assert.equal((await reviewedStatus.json()).feedback.reviewNote, '已核对现场信息，采纳修改。');
 
     const missingFeedback = await fetch(`${base}/api/feedbacks/FB-20000101-000000`);
     assert.equal(missingFeedback.status, 404);

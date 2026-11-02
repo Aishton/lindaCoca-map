@@ -10,6 +10,7 @@ const state = {
   quickMode: false,
   homeRecommendationActive: false,
   mapType: 'all',
+  mapSearchQuery: '',
   selectedMapPlaceId: null,
   calibrationMode: false,
   calibrationTargetId: null,
@@ -137,7 +138,6 @@ function fromSeed(seed) {
     parentId: place.parentId ?? null,
     campusArea: place.campusArea ?? null,
     locationNote: place.locationNote ?? null,
-    mealPeriod: place.mealPeriod ?? null,
     mapX: place.mapX ?? null,
     mapY: place.mapY ?? null,
     longitude: place.longitude ?? null,
@@ -383,6 +383,7 @@ function startCalibrationForPlace(id) {
   state.calibrationTargetId = target.id;
   state.calibrationMode = true;
   state.mapType = 'all';
+  state.mapSearchQuery = '';
   $('#map-search').value = '';
   document.querySelectorAll('#map-filters [data-map-type]').forEach(button => {
     button.setAttribute('aria-pressed', String(button.dataset.mapType === 'all'));
@@ -447,7 +448,7 @@ function mapGroups() {
 }
 
 function mapGroupMatches(group) {
-  const query = ($('#map-search')?.value || '').trim().toLocaleLowerCase();
+  const query = state.mapSearchQuery;
   return group.places.some(place => {
     const kindMatches = state.mapType === 'all' || mapKind(place) === state.mapType;
     const textMatches = !query || [place.name, place.locationNote, ...place.recommendations.map(item => item.name)]
@@ -582,6 +583,7 @@ function focusPlaceOnMap(id, { scroll = true } = {}) {
   if (!original) return;
   const place = original.parentId ? state.places.find(item => item.id === original.parentId) ?? original : original;
   state.mapType = 'all';
+  state.mapSearchQuery = '';
   $('#map-search').value = '';
   document.querySelectorAll('#map-filters [data-map-type]').forEach(button => {
     button.setAttribute('aria-pressed', String(button.dataset.mapType === 'all'));
@@ -602,10 +604,8 @@ function updateMealButtons() {
 }
 
 function candidates(quick) {
-  const matchingMeal = state.places.filter(place =>
-    !place.mealPeriod || place.mealPeriod === 'both' || place.mealPeriod === state.meal);
-  if (quick) return matchingMeal;
-  return matchingMeal.filter(place => {
+  if (quick) return [...state.places];
+  return state.places.filter(place => {
     const areaMatches = state.area === 'all' || place.campusArea === state.area;
     const typeMatches = state.placeType === 'all' || mapKind(place) === state.placeType;
     const preferenceMatches = state.types.size === 0
@@ -632,8 +632,8 @@ function recommend(quick) {
   }
   state.results = shuffled(candidates(quick)).slice(0, 3).map(place => chooseResult(place, quick));
   $('#resulttext').textContent = quick
-    ? '按已收集的午餐／晚餐餐次随机挑选；实际营业时间请到店确认。'
-    : '按餐次、区域、地点类型和菜名偏好筛选；实际营业时间请到店确认。';
+    ? '从项目组清单中随机挑选；实际营业时段请到店确认。'
+    : '按区域、地点类型和菜名偏好筛选；午餐／晚餐仅作场景标记，营业时段待核实。';
   $('#meta').textContent = quick
     ? `${mealLabel()}想吃什么 · ${state.source}`
     : `${areaLabel()} · ${placeTypeLabel()} · ${state.source}`;
@@ -659,13 +659,13 @@ function recentPlaces() {
 
 function homeFeedCard(place, index, recommended) {
   const featured = place.featuredRecommendation;
-  const description = recommended
-    ? `推荐菜品：${featured?.name || '已收集菜品线索'}`
-    : `${placeLabel(place)} · ${locationFor(place)}`;
-  return `<button class="feed-card" type="button" data-home-focus="${escapeHtml(place.id)}" aria-label="在地图中查看${escapeHtml(place.name)}">
-    <span class="feed-card-top"><span class="zone pending">${escapeHtml(recommended ? '为你推荐' : placeLabel(place))}</span>${recommended ? `<span class="score">${escapeHtml(place.verificationStatus || '待确认')}</span>` : ''}</span>
-    <h3>${escapeHtml(place.name)}</h3><p>${escapeHtml(description)}</p><span class="feed-cta">在地图中查看 →</span>
-  </button>`;
+  const dish = featured?.name || place.recommendations[0]?.name || '暂无具体菜品记录';
+  const location = locationFor(place, featured);
+  return `<article class="feed-card">
+    <span class="feed-card-top"><span class="zone pending">${escapeHtml(recommended ? '为你推荐' : placeLabel(place))}</span></span>
+    <h3>${escapeHtml(place.name)}</h3><p><b>推荐菜品</b> · ${escapeHtml(dish)}</p><p class="feed-card-meta">📍 ${escapeHtml(location)}</p><p class="feed-card-meta">最近确认：${escapeHtml(place.lastConfirmedAt || '暂无确认记录')}</p>
+    <div class="feed-card-actions"><button type="button" data-home-focus="${escapeHtml(place.id)}">地图定位</button><button type="button" data-home-detail="${escapeHtml(place.id)}">查看详情</button>${recommended ? `<button type="button" data-home-swap="${index}">换一家 ↻</button>` : ''}</div>
+  </article>`;
 }
 
 function renderHomeFeed() {
@@ -710,7 +710,7 @@ function card(place, index) {
     ].filter(Boolean);
   const reason = reasons.length ? reasons.join(' · ') : '从当前可选地点中随机挑选';
   return `<article class="card">
-    <div class="cardtop"><span class="zone pending">${escapeHtml(placeLabel(place))}</span><span class="score">${escapeHtml(place.verificationStatus || '待确认')}</span></div>
+    <div class="cardtop"><span class="zone pending">${escapeHtml(placeLabel(place))}</span></div>
     <h3>${escapeHtml(place.name)}</h3>
     <p class="dish">${featured ? `推荐菜品：${escapeHtml(featured.name)}` : '可在详情中查看已收集的菜品与线索'}</p>
     ${tags ? `<div class="tags">${tags}</div>` : ''}
@@ -766,9 +766,33 @@ function localFeedbacks() {
 
 let reviewFilter = '待审核';
 let selectedReviewCode = '';
+let adminFeedbacks = [];
+let adminToken = sessionStorage.getItem('hustmap-admin-token') || '';
 
 function writeLocalFeedbacks(records) {
   localStorage.setItem(feedbackStorageKey, JSON.stringify(records.slice(0, 50)));
+}
+
+function showAdminLogin(message = '管理员登录后才能读取和处理反馈。') {
+  $('#review-count').textContent = '未登录';
+  $('#review-list').innerHTML = `<form id="admin-login-form" class="feedback-page-form"><label>管理员账号<input name="username" autocomplete="username" value="admin" required></label><label>管理员密码<input name="password" type="password" autocomplete="current-password" required></label><button class="primary" type="submit">登录审核台</button><p class="small">${escapeHtml(message)}</p></form>`;
+  $('#review-detail').innerHTML = '<div class="empty">审核数据仅对经过服务端认证的管理员开放。</div>';
+}
+
+async function adminRequest(path, options = {}) {
+  const response = await fetch(new URL(path, document.baseURI), {
+    ...options,
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${adminToken}`, ...(options.headers || {}) },
+    cache: 'no-store',
+  });
+  const body = await response.json().catch(() => ({}));
+  if (response.status === 401) {
+    adminToken = '';
+    sessionStorage.removeItem('hustmap-admin-token');
+    throw Object.assign(new Error(body.message || '登录已失效'), { unauthorized: true });
+  }
+  if (!response.ok) throw new Error(body.message || '管理员请求失败');
+  return body;
 }
 
 function renderReviewDetail(feedback) {
@@ -787,33 +811,60 @@ function renderReviewDetail(feedback) {
     ${reviewed ? `<p class="notice">该反馈已经处理。如需修改结果，请在正式后台保留二次复核记录。</p>` : '<div class="review-actions"><button class="primary" data-review-action="approve">采纳反馈</button><button class="review-reject" data-review-action="reject">驳回反馈</button></div>'}`;
 }
 
-function renderReview() {
-  const records = localFeedbacks();
-  const visible = reviewFilter === 'all' ? records : records.filter(item => item.status === '待审核');
-  $('#review-count').textContent = `${records.filter(item => item.status === '待审核').length} 条待处理`;
+function paintReview() {
+  const visible = reviewFilter === 'all' ? adminFeedbacks : adminFeedbacks.filter(item => item.status === '待审核');
+  $('#review-count').textContent = `${adminFeedbacks.filter(item => item.status === '待审核').length} 条待处理`;
   $('#review-list').innerHTML = visible.length ? visible.map(item => {
     const place = state.places.find(placeItem => placeItem.id === item.placeId);
     const active = item.trackingCode === selectedReviewCode ? ' active' : '';
     const done = item.status === '待审核' ? '' : ' review-done';
     return `<button class="review-item${active}${done}" data-review-code="${escapeHtml(item.trackingCode)}"><b>${escapeHtml(place?.name || item.proposedPlaceName || '新增地点')}</b><em class="review-state">${escapeHtml(feedbackStatusLabel(item.status))}</em><span>${escapeHtml(item.feedbackType)} · ${escapeHtml(item.trackingCode)}</span></button>`;
   }).join('') : '<div class="empty">当前没有待处理反馈。可先从“反馈”页面提交一条演示数据。</div>';
-  const selected = records.find(item => item.trackingCode === selectedReviewCode);
+  const selected = adminFeedbacks.find(item => item.trackingCode === selectedReviewCode);
   renderReviewDetail(selected);
 }
 
-function decideFeedback(action) {
+async function renderReview() {
+  if (!adminToken) return showAdminLogin();
+  $('#review-list').innerHTML = '<div class="empty">正在读取受保护的反馈记录…</div>';
+  try {
+    const body = await adminRequest(`/api/admin/feedbacks?status=${reviewFilter === 'all' ? 'all' : 'pending'}`);
+    adminFeedbacks = body.feedbacks;
+    paintReview();
+  } catch (error) {
+    if (error.unauthorized) showAdminLogin(error.message);
+    else showAdminLogin(`${error.message}。静态 GitHub Pages 无法运行管理员后端，请使用服务器部署版。`);
+  }
+}
+
+async function loginAdmin(form) {
+  const data = new FormData(form);
+  const response = await fetch(new URL('./api/admin/login', document.baseURI), {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username: data.get('username'), password: data.get('password') }),
+  });
+  const body = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(body.message || '管理员登录失败');
+  adminToken = body.token;
+  sessionStorage.setItem('hustmap-admin-token', adminToken);
+  await renderReview();
+  toast('管理员身份验证成功');
+}
+
+async function decideFeedback(action) {
   if (!selectedReviewCode) return;
   const note = $('#review-note')?.value.trim() || '';
   if (!note) return toast('请先填写处理说明');
-  const records = localFeedbacks();
-  const feedback = records.find(item => item.trackingCode === selectedReviewCode);
-  if (!feedback) return toast('未找到这条反馈');
-  feedback.status = action === 'approve' ? '已批准' : '已驳回';
-  feedback.reviewNote = note;
-  feedback.reviewedAt = new Date().toISOString();
-  writeLocalFeedbacks(records);
-  renderReview();
-  toast(action === 'approve' ? '已采纳，用户可凭编号查询结果' : '已驳回，用户可查看处理说明');
+  try {
+    await adminRequest(`/api/admin/feedbacks/${encodeURIComponent(selectedReviewCode)}`, {
+      method: 'PATCH', body: JSON.stringify({ decision: action, reviewNote: note }),
+    });
+    await renderReview();
+    toast(action === 'approve' ? '已采纳，用户可凭编号查询结果' : '已驳回，用户可查看处理说明');
+  } catch (error) {
+    if (error.unauthorized) showAdminLogin(error.message);
+    else toast(error.message);
+  }
 }
 
 function createTrackingCode() {
@@ -950,7 +1001,7 @@ function detail(id, from = 'results') {
   $('#detailbox').innerHTML = `<div class="detailhero"><div><span class="zone pending">${escapeHtml(placeLabel(place))}</span><h2>${escapeHtml(place.name)}</h2>${featured ? `<p class="dish">本次推荐：${escapeHtml(featured.name)}</p>` : ''}</div><button id="feedback" class="primary">纠错反馈</button></div>
     <div class="details">
       <div class="detailitem"><b>位置线索</b><span>${escapeHtml(locationFor(place, featured))}<br><span class="small location-status">${escapeHtml(place.locationStatus || '未定位')}</span></span><button class="secondary map-location-button" data-locate="${escapeHtml(place.id)}">在地图上查看</button></div>
-      <div class="detailitem"><b>午餐／晚餐营业时段</b><span>${place.mealPeriod === 'dinner' ? '晚餐' : place.mealPeriod === 'lunch' ? '午餐' : place.mealPeriod === 'both' ? '午餐／晚餐' : '待确认'}</span></div>
+      <div class="detailitem"><b>午餐／晚餐营业时段</b><span>待确认</span></div>
       <div class="detailitem"><b>信息状态</b><span>${escapeHtml(place.verificationStatus || '待确认')}</span></div>
       <div class="detailitem"><b>最近确认</b><span>${escapeHtml(place.lastConfirmedAt || '暂无确认记录')}</span></div>
       <div class="detailitem"><b>来源分组</b><span>${escapeHtml(place.sourceGroup)}</span></div>
@@ -999,7 +1050,12 @@ function renderAllPlaces() {
 
 function setupPage() {
   $('#place-search').addEventListener('input', renderAllPlaces);
-  $('#map-search').addEventListener('input', renderMap);
+  $('#map-search-form').addEventListener('submit', event => {
+    event.preventDefault();
+    state.mapSearchQuery = $('#map-search').value.trim().toLocaleLowerCase();
+    renderMap();
+    toast(state.mapSearchQuery ? `正在地图中查找“${$('#map-search').value.trim()}”` : '已显示全部地点');
+  });
   $('#calibration-target').addEventListener('change', event => {
     state.calibrationTargetId = event.target.value;
     renderCalibrationPanel();
@@ -1084,8 +1140,12 @@ function setupPage() {
     button.addEventListener('click', () => setDecisionTab(button.dataset.decisionTab));
   });
   $('#home-feed-list').addEventListener('click', event => {
-    const card = event.target.closest('[data-home-focus]');
-    if (card) focusPlaceOnMap(card.dataset.homeFocus, { scroll: false });
+    const focusButton = event.target.closest('[data-home-focus]');
+    const detailButton = event.target.closest('[data-home-detail]');
+    const swapButton = event.target.closest('[data-home-swap]');
+    if (focusButton) focusPlaceOnMap(focusButton.dataset.homeFocus, { scroll: false });
+    if (detailButton) detail(detailButton.dataset.homeDetail, 'map');
+    if (swapButton) swap(Number(swapButton.dataset.homeSwap));
   });
   $('#cards').addEventListener('click', event => {
     const detailButton = event.target.closest('[data-detail]');
@@ -1111,6 +1171,19 @@ function setupPage() {
       renderReview();
     }
     if (actionButton) decideFeedback(actionButton.dataset.reviewAction);
+  });
+  $('#review').addEventListener('submit', async event => {
+    if (event.target.id !== 'admin-login-form') return;
+    event.preventDefault();
+    const button = event.target.querySelector('button[type="submit"]');
+    button.disabled = true;
+    button.textContent = '正在验证…';
+    try {
+      await loginAdmin(event.target);
+    } catch (error) {
+      showAdminLogin(error.message);
+      toast(error.message);
+    }
   });
   $('#tracking-form').addEventListener('submit', async event => {
     event.preventDefault();

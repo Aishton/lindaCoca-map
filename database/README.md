@@ -14,8 +14,6 @@ node database/init.mjs
 - `recommendations`：39 条食物推荐；已给出的楼层写入 `floor`，未给出的留空。百景园的“水饺、馄饨”和“池奈、牛肉饭”分别拆成两条，原文保存在 `source_label`。
 - `feedback`：保存用户修改意见、随机反馈编号、处理状态和处理说明；不预置演示反馈。
 
-`places.meal_period` 记录项目组提供的用餐餐次：`both` 表示午餐／晚餐，`dinner` 表示仅晚餐。杨阿姨鸡蛋灌饼为 `dinner`，其余 27 个地点为 `both`。这不是具体营业时间，也尚未逐店现场核实；更新种子清单后运行初始化脚本同步本地数据库。
-
 `source_group` 对应原始清单的“食堂／校内”。`source_label` 保留原条目。`longitude`、`latitude` 是当前真实比例地图使用的 WGS84 经纬度，`coordinate_source` 记录坐标依据；`location_status` 区分“未定位／大致位置／已确认”。主要食堂使用华中科技大学官方“一张图”图层坐标，品牌店和窗口仍可能是依据公开地址校准的大致位置。`map_x`、`map_y` 是旧版形象化底图百分比坐标，仅为兼容保留。
 
 前端优先从 API 读取地点与地图坐标，静态部署时使用 `seed.json` 回退。本地服务接收反馈并写入 SQLite；维护员审核和正式地点写入仍待后续实现。

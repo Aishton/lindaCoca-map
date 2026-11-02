@@ -8,18 +8,18 @@
 
 ## 当前功能
 
-- 按项目组提供的午餐／晚餐餐次、区域、地点类型和菜名关键词筛选；具体营业时间仍待核实
+- 午餐／晚餐场景标记，区域、地点类型和菜名关键词筛选
 - “帮我决定今天吃什么”快速模式
 - 以地点为主体的三个推荐、推荐理由与“换一家”
 - 全部地点搜索和餐饮点详情
 - Leaflet + OpenStreetMap 校园地图
 - 地图搜索、食堂／店铺筛选、合并标记和详情弹窗
 - 名称、位置、楼层入口、菜品、营业时间等多类型修改意见
-- 反馈编号生成和处理状态查询
+- 反馈编号生成、处理状态查询和管理员审核
 - “详情 → 纠错反馈 → 地图圈点”的位置纠错草稿
 - 校准结果复制与 JSON 下载
 
-本地服务会将反馈写入 SQLite；GitHub Pages 演示环境会将反馈保存在当前浏览器。用户圈出的坐标只作为“大致位置”，不会自动变成“已确认”。
+本地服务会将反馈写入 SQLite，并通过管理员登录保护审核接口；GitHub Pages 演示环境只能在当前浏览器保存普通用户反馈，不能提供真实管理员权限。用户圈出的坐标只作为“大致位置”，不会自动变成“已确认”。
 
 ## 文档导航
 
@@ -28,6 +28,12 @@
 - [角色、权限与纠错审核设计](docs/roles-and-review.md)：后续游客、贡献者、管理员、维护者和审核工作流。
 - [数据库说明](database/README.md)
 - [后端与 API 说明](server/README.md)
+
+## 部署到 Render
+
+仓库已包含 `render.yaml`。在 Render 中选择 **New → Blueprint**，连接本仓库并确认创建服务；随后为 `ADMIN_PASSWORD` 填写强密码。Blueprint 会创建 Node Web Service，并把 SQLite 放在 `/var/data/meishi.sqlite` 的 1 GB 持久化磁盘中。部署成功后请依次检查 `/api/health`、普通反馈提交、管理员登录和反馈审核。
+
+持久化磁盘需要 Render 付费实例。如果仅为短时课堂展示，可删除 `render.yaml` 中的 `disk` 配置并选择 Free，但每次重启、休眠或重新部署都可能丢失反馈数据，不适合作为长期在线系统。
 
 ## 仓库结构
 
@@ -60,6 +66,8 @@ lindaCoca-map/
 ```powershell
 git clone https://github.com/Aishton/lindaCoca-map.git
 cd lindaCoca-map
+$env:ADMIN_USERNAME="admin"
+$env:ADMIN_PASSWORD="请替换为强密码"
 node server/server.mjs
 ```
 
@@ -69,6 +77,8 @@ node server/server.mjs
 - 健康检查：`http://127.0.0.1:3000/api/health`
 - 地点 API：`http://127.0.0.1:3000/api/places`
 - 反馈 API：`POST http://127.0.0.1:3000/api/feedbacks`
+- 管理员登录：`POST http://127.0.0.1:3000/api/admin/login`
+- 受保护审核列表：`GET http://127.0.0.1:3000/api/admin/feedbacks`
 
 第一次启动会根据 `database/seed.json` 创建本地 `database/meishi.sqlite`。该数据库文件不提交到 Git。
 
