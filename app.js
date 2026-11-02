@@ -197,7 +197,13 @@ function go(view, { resetScroll = true, updateHistory = true } = {}) {
   document.querySelectorAll('.view').forEach(element => {
     element.classList.toggle('active', element.id === view);
   });
+  const activeNav = ['results', 'detail'].includes(view) ? 'home' : view;
+  document.querySelectorAll('.nav [data-go]').forEach(button => {
+    if (button.dataset.go === activeNav) button.setAttribute('aria-current', 'page');
+    else button.removeAttribute('aria-current');
+  });
   if (view === 'admin') renderAllPlaces();
+  if (view === 'review') renderReview();
   if (view === 'home') {
     renderMap();
     setTimeout(() => leafletMap?.invalidateSize(), 0);
@@ -755,6 +761,58 @@ function localFeedbacks() {
   }
 }
 
+let reviewFilter = '待审核';
+let selectedReviewCode = '';
+
+function writeLocalFeedbacks(records) {
+  localStorage.setItem(feedbackStorageKey, JSON.stringify(records.slice(0, 50)));
+}
+
+function renderReviewDetail(feedback) {
+  const panel = $('#review-detail');
+  if (!feedback) {
+    panel.innerHTML = '<div class="empty">请从左侧选择一条反馈。</div>';
+    return;
+  }
+  const place = state.places.find(item => item.id === feedback.placeId);
+  const placeName = place?.name || feedback.proposedPlaceName || '新增地点';
+  const reviewed = feedback.status !== '待审核';
+  panel.innerHTML = `<span class="pill">${escapeHtml(feedbackStatusLabel(feedback.status))}</span><h2>${escapeHtml(placeName)}</h2>
+    <div class="review-data"><div><b>反馈编号</b>${escapeHtml(feedback.trackingCode)}</div><div><b>反馈类型</b>${escapeHtml(feedback.feedbackType)}</div><div><b>提交时间</b>${escapeHtml(new Date(feedback.submittedAt).toLocaleString('zh-CN'))}</div><div><b>原地点</b>${escapeHtml(place?.locationNote || (feedback.placeId ? '地点信息待查看' : '无，新地点'))}</div></div>
+    <div class="review-data"><div style="grid-column:1/-1"><b>用户说明</b><span class="review-evidence">${escapeHtml(feedback.details || '未填写补充说明')}</span></div></div>
+    <label class="field"><span>处理说明</span><textarea id="review-note" class="review-note" maxlength="300" placeholder="说明采纳或驳回的依据。" ${reviewed ? 'disabled' : ''}>${escapeHtml(feedback.reviewNote || '')}</textarea></label>
+    ${reviewed ? `<p class="notice">该反馈已经处理。如需修改结果，请在正式后台保留二次复核记录。</p>` : '<div class="review-actions"><button class="primary" data-review-action="approve">采纳反馈</button><button class="review-reject" data-review-action="reject">驳回反馈</button></div>'}`;
+}
+
+function renderReview() {
+  const records = localFeedbacks();
+  const visible = reviewFilter === 'all' ? records : records.filter(item => item.status === '待审核');
+  $('#review-count').textContent = `${records.filter(item => item.status === '待审核').length} 条待处理`;
+  $('#review-list').innerHTML = visible.length ? visible.map(item => {
+    const place = state.places.find(placeItem => placeItem.id === item.placeId);
+    const active = item.trackingCode === selectedReviewCode ? ' active' : '';
+    const done = item.status === '待审核' ? '' : ' review-done';
+    return `<button class="review-item${active}${done}" data-review-code="${escapeHtml(item.trackingCode)}"><b>${escapeHtml(place?.name || item.proposedPlaceName || '新增地点')}</b><em class="review-state">${escapeHtml(feedbackStatusLabel(item.status))}</em><span>${escapeHtml(item.feedbackType)} · ${escapeHtml(item.trackingCode)}</span></button>`;
+  }).join('') : '<div class="empty">当前没有待处理反馈。可先从“反馈”页面提交一条演示数据。</div>';
+  const selected = records.find(item => item.trackingCode === selectedReviewCode);
+  renderReviewDetail(selected);
+}
+
+function decideFeedback(action) {
+  if (!selectedReviewCode) return;
+  const note = $('#review-note')?.value.trim() || '';
+  if (!note) return toast('请先填写处理说明');
+  const records = localFeedbacks();
+  const feedback = records.find(item => item.trackingCode === selectedReviewCode);
+  if (!feedback) return toast('未找到这条反馈');
+  feedback.status = action === 'approve' ? '已批准' : '已驳回';
+  feedback.reviewNote = note;
+  feedback.reviewedAt = new Date().toISOString();
+  writeLocalFeedbacks(records);
+  renderReview();
+  toast(action === 'approve' ? '已采纳，用户可凭编号查询结果' : '已驳回，用户可查看处理说明');
+}
+
 function createTrackingCode() {
   const date = new Date();
   const day = `${date.getFullYear()}${String(date.getMonth() + 1).padStart(2, '0')}${String(date.getDate()).padStart(2, '0')}`;
@@ -774,7 +832,7 @@ function saveLocalFeedback(payload) {
   };
   const records = localFeedbacks();
   records.unshift(item);
-  localStorage.setItem(feedbackStorageKey, JSON.stringify(records.slice(0, 50)));
+  writeLocalFeedbacks(records);
   return item;
 }
 
@@ -820,7 +878,7 @@ function renderFeedbackResult(feedback) {
 function populateFeedbackPlaces() {
   const select = $('#feedback-place');
   if (!select) return;
-  select.innerHTML = `<option value="">请选择已有地点</option>${state.places.map(place => `<option value="${escapeHtml(place.id)}">${escapeHtml(place.name)}（${escapeHtml(placeLabel(place))}）</option>`).join('')}`;
+  select.innerHTML = `<option value="">请选择反馈对象</option><option value="__new_place__">＋ 新地点（清单中没有）</option>${state.places.map(place => `<option value="${escapeHtml(place.id)}">${escapeHtml(place.name)}（${escapeHtml(placeLabel(place))}）</option>`).join('')}`;
 }
 
 function activateFeedbackTab(tab) {
@@ -833,17 +891,20 @@ function activateFeedbackTab(tab) {
 
 async function handleFeedbackSubmit(place, form, receiptSelector = '#feedback-receipt') {
   const data = new FormData(form);
-  const feedbackType = String(data.get('feedbackType') || '其他');
+  let feedbackType = String(data.get('feedbackType') || '其他');
   const details = String(data.get('details') || '').trim();
   const proposedPlaceName = String(data.get('proposedPlaceName') || '').trim();
-  const selectedPlaceId = place?.id || String(data.get('placeId') || '').trim() || null;
+  const selectedValue = place?.id || String(data.get('placeId') || '').trim() || null;
+  const isNewPlace = selectedValue === '__new_place__' || feedbackType === '新增位置';
+  if (isNewPlace) feedbackType = '新增位置';
+  const selectedPlaceId = isNewPlace ? null : selectedValue;
   if (!details) return toast('请填写修改意见或补充说明');
-  if (feedbackType === '新增位置' && !proposedPlaceName) return toast('请填写新增地点名称');
-  if (feedbackType !== '新增位置' && !selectedPlaceId) return toast('请选择要反馈的已有地点，或改为“新增地点”');
+  if (isNewPlace && !proposedPlaceName) return toast('请填写新增地点名称');
+  if (!isNewPlace && !selectedPlaceId) return toast('请选择反馈对象，或选择“新地点”');
   const calibration = selectedPlaceId ? calibrationForPlace(selectedPlaceId) : null;
   const payload = {
-    placeId: feedbackType === '新增位置' ? null : selectedPlaceId,
-    proposedPlaceName: feedbackType === '新增位置' ? proposedPlaceName : null,
+    placeId: selectedPlaceId,
+    proposedPlaceName: isNewPlace ? proposedPlaceName : null,
     feedbackType,
     details,
     proposedPayload: calibration ? { latitude: calibration.latitude, longitude: calibration.longitude } : null,
@@ -869,6 +930,7 @@ async function handleFeedbackSubmit(place, form, receiptSelector = '#feedback-re
     };
     form.reset();
     form.querySelector('[data-proposed-name]').hidden = true;
+    if (form.elements.placeId) form.elements.placeId.disabled = false;
   } catch (error) {
     toast(error.message || '反馈提交失败，请稍后重试');
   } finally {
@@ -1032,6 +1094,21 @@ function setupPage() {
     const button = event.target.closest('[data-detail]');
     if (button) detail(button.dataset.detail, 'admin');
   });
+  $('#review').addEventListener('click', event => {
+    const filterButton = event.target.closest('[data-review-filter]');
+    const recordButton = event.target.closest('[data-review-code]');
+    const actionButton = event.target.closest('[data-review-action]');
+    if (filterButton) {
+      reviewFilter = filterButton.dataset.reviewFilter;
+      document.querySelectorAll('[data-review-filter]').forEach(button => button.setAttribute('aria-pressed', String(button === filterButton)));
+      renderReview();
+    }
+    if (recordButton) {
+      selectedReviewCode = recordButton.dataset.reviewCode;
+      renderReview();
+    }
+    if (actionButton) decideFeedback(actionButton.dataset.reviewAction);
+  });
   $('#tracking-form').addEventListener('submit', async event => {
     event.preventDefault();
     const code = $('#tracking-code').value.trim();
@@ -1054,18 +1131,25 @@ function setupPage() {
     const isNew = event.target.value === '新增位置';
     const form = event.currentTarget.form;
     form.querySelector('[data-proposed-name]').hidden = !isNew;
-    form.elements.placeId.disabled = isNew;
-    if (isNew) form.elements.placeId.value = '';
+    if (isNew) form.elements.placeId.value = '__new_place__';
+    else if (form.elements.placeId.value === '__new_place__') form.elements.placeId.value = '';
+  });
+  $('#feedback-page-form').elements.placeId.addEventListener('change', event => {
+    const form = event.currentTarget.form;
+    const isNew = event.target.value === '__new_place__';
+    form.querySelector('[data-proposed-name]').hidden = !isNew;
+    if (isNew) form.elements.feedbackType.value = '新增位置';
+    else if (form.elements.feedbackType.value === '新增位置') form.elements.feedbackType.value = '位置有误';
   });
 }
 
 setupPage();
 const initialView = location.hash.slice(1);
 if (initialView === 'map') scrollToMap('auto');
-else if (['home', 'admin', 'feedback'].includes(initialView)) go(initialView, { updateHistory: false });
+else if (['home', 'admin', 'feedback', 'review'].includes(initialView)) go(initialView, { updateHistory: false });
 window.addEventListener('popstate', () => {
   const view = location.hash.slice(1);
   if (view === 'map') scrollToMap('auto');
-  else go(['home', 'results', 'detail', 'admin', 'feedback'].includes(view) ? view : 'home', { updateHistory: false });
+  else go(['home', 'results', 'detail', 'admin', 'feedback', 'review'].includes(view) ? view : 'home', { updateHistory: false });
 });
 loadPlaces();
