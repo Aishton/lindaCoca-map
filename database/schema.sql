@@ -64,4 +64,3 @@ CREATE TABLE IF NOT EXISTS feedback (
 );
 
 CREATE INDEX IF NOT EXISTS feedback_review_status ON feedback (review_status);
-CREATE UNIQUE INDEX IF NOT EXISTS feedback_tracking_code ON feedback (tracking_code);

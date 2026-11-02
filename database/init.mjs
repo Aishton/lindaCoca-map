@@ -52,6 +52,8 @@ if (!feedbackTableSql.includes('tracking_code') || !feedbackTableSql.includes('�
     CREATE UNIQUE INDEX feedback_tracking_code ON feedback (tracking_code);
   `);
 }
+// 旧版 feedback 表没有 tracking_code；必须在表迁移之后创建该索引。
+database.exec('CREATE UNIQUE INDEX IF NOT EXISTS feedback_tracking_code ON feedback (tracking_code)');
 
 const addPlace = database.prepare(`
   INSERT INTO places
