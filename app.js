@@ -630,9 +630,18 @@ function recommend(quick) {
     : `${areaLabel()} · ${placeTypeLabel()} · ${state.source}`;
   renderResults();
   state.homeRecommendationActive = true;
+  setDecisionTab('quick');
   renderHomeFeed();
   renderMap();
   setTimeout(() => focusRecommendedOnMap(), 80);
+}
+
+function setDecisionTab(tab) {
+  document.querySelectorAll('[data-decision-tab]').forEach(button => {
+    button.setAttribute('aria-selected', String(button.dataset.decisionTab === tab));
+  });
+  $('#decision-quick-pane').hidden = tab !== 'quick';
+  $('#decision-filter-pane').hidden = tab !== 'filter';
 }
 
 function recentPlaces() {
@@ -1006,6 +1015,9 @@ function setupPage() {
   });
   $('#quick').addEventListener('click', () => recommend(true));
   $('#recommend').addEventListener('click', () => recommend(false));
+  document.querySelectorAll('[data-decision-tab]').forEach(button => {
+    button.addEventListener('click', () => setDecisionTab(button.dataset.decisionTab));
+  });
   $('#home-feed-list').addEventListener('click', event => {
     const card = event.target.closest('[data-home-focus]');
     if (card) focusPlaceOnMap(card.dataset.homeFocus, { scroll: false });
