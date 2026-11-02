@@ -8,7 +8,6 @@ CREATE TABLE IF NOT EXISTS places (
     parent_id TEXT REFERENCES places(id),
     campus_area TEXT CHECK (campus_area IN ('east', 'central', 'west')),
     location_note TEXT,
-    meal_period TEXT CHECK (meal_period IN ('lunch', 'dinner', 'both')),
     map_x REAL CHECK (map_x IS NULL OR (map_x >= 0 AND map_x <= 100)),
     map_y REAL CHECK (map_y IS NULL OR (map_y >= 0 AND map_y <= 100)),
     longitude REAL CHECK (longitude IS NULL OR (longitude >= -180 AND longitude <= 180)),

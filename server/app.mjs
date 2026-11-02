@@ -1,5 +1,5 @@
 import { createServer } from 'node:http';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
@@ -8,7 +8,7 @@ const scriptPath = fileURLToPath(new URL('../app.js', import.meta.url));
 const seedPath = fileURLToPath(new URL('../database/seed.json', import.meta.url));
 const placeColumns = `
   id, name, place_type, source_group, parent_id, campus_area,
-  location_note, meal_period, map_x, map_y, longitude, latitude, coordinate_source,
+  location_note, map_x, map_y, longitude, latitude, coordinate_source,
   location_status, source_label,
   verification_status, last_confirmed_at
 `;
@@ -92,7 +92,6 @@ function mapPlace(row, recommendations) {
     parentId: row.parent_id,
     campusArea: row.campus_area,
     locationNote: row.location_note,
-    mealPeriod: row.meal_period,
     mapX: row.map_x,
     mapY: row.map_y,
     longitude: row.longitude,
@@ -106,7 +105,25 @@ function mapPlace(row, recommendations) {
   };
 }
 
-export function createApp(database) {
+export function createApp(database, options = {}) {
+  const adminUsername = options.adminUsername ?? process.env.ADMIN_USERNAME ?? 'admin';
+  const adminPassword = options.adminPassword ?? process.env.ADMIN_PASSWORD;
+  const sessions = new Map();
+  const sessionTtlMs = 8 * 60 * 60 * 1000;
+  const sameSecret = (left, right) => {
+    const a = Buffer.from(String(left));
+    const b = Buffer.from(String(right));
+    return a.length === b.length && timingSafeEqual(a, b);
+  };
+  const sessionFor = request => {
+    const token = String(request.headers.authorization || '').replace(/^Bearer\s+/i, '');
+    const session = sessions.get(token);
+    if (!session || session.expiresAt <= Date.now()) {
+      if (token) sessions.delete(token);
+      return null;
+    }
+    return { token, ...session };
+  };
   const allPlaces = database.prepare(`
     SELECT ${placeColumns} FROM places
     ORDER BY CASE source_group WHEN '食堂' THEN 0 ELSE 1 END, name
@@ -130,6 +147,17 @@ export function createApp(database) {
            review_status, review_note, submitted_at, reviewed_at
     FROM feedback WHERE tracking_code = ?
   `);
+  const feedbackForReview = database.prepare(`
+    SELECT tracking_code, place_id, proposed_place_name, feedback_type, details,
+           review_status, review_note, submitted_at, reviewed_at
+    FROM feedback
+    WHERE (? = 'all' OR review_status = ?)
+    ORDER BY CASE review_status WHEN '待审核' THEN 0 ELSE 1 END, submitted_at DESC
+  `);
+  const reviewFeedback = database.prepare(`
+    UPDATE feedback SET review_status = ?, review_note = ?, reviewed_at = CURRENT_TIMESTAMP
+    WHERE tracking_code = ? AND review_status = '待审核'
+  `);
   const validFeedbackTypes = new Set([
     '还在这里', '位置有误', '名称有误', '楼层入口错误', '菜品信息有误',
     '营业时间有误', '暂停营业', '新增位置', '其他',
@@ -142,6 +170,63 @@ export function createApp(database) {
 
       if (request.method === 'GET' && path === '/api/health') {
         sendJson(response, 200, { status: 'ok' });
+        return;
+      }
+
+      if (request.method === 'POST' && path === '/api/admin/login') {
+        if (!adminPassword) {
+          sendJson(response, 503, { error: 'admin_not_configured', message: '服务器尚未配置管理员密码' });
+          return;
+        }
+        const body = await readJsonBody(request, 4 * 1024);
+        if (!sameSecret(body.username || '', adminUsername) || !sameSecret(body.password || '', adminPassword)) {
+          sendJson(response, 401, { error: 'invalid_credentials', message: '管理员账号或密码不正确' });
+          return;
+        }
+        const token = randomBytes(32).toString('base64url');
+        sessions.set(token, { username: adminUsername, expiresAt: Date.now() + sessionTtlMs });
+        sendJson(response, 200, { token, user: { username: adminUsername, role: 'admin' }, expiresIn: sessionTtlMs / 1000 });
+        return;
+      }
+
+      if (path.startsWith('/api/admin/')) {
+        const session = sessionFor(request);
+        if (!session) {
+          sendJson(response, 401, { error: 'unauthorized', message: '请先以管理员身份登录' });
+          return;
+        }
+        if (request.method === 'GET' && path === '/api/admin/session') {
+          sendJson(response, 200, { user: { username: session.username, role: 'admin' } });
+          return;
+        }
+        if (request.method === 'POST' && path === '/api/admin/logout') {
+          sessions.delete(session.token);
+          sendJson(response, 200, { ok: true });
+          return;
+        }
+        if (request.method === 'GET' && path === '/api/admin/feedbacks') {
+          const status = url.searchParams.get('status') === 'all' ? 'all' : '待审核';
+          sendJson(response, 200, { feedbacks: feedbackForReview.all(status, status).map(mapFeedback) });
+          return;
+        }
+        if (request.method === 'PATCH' && path.startsWith('/api/admin/feedbacks/')) {
+          const trackingCode = decodeURIComponent(path.slice('/api/admin/feedbacks/'.length)).toUpperCase();
+          const body = await readJsonBody(request, 8 * 1024);
+          const status = body.decision === 'approve' ? '已批准' : body.decision === 'reject' ? '已驳回' : '';
+          const reviewNote = String(body.reviewNote || '').trim();
+          if (!status || !reviewNote || reviewNote.length > 300) {
+            sendJson(response, 400, { error: 'invalid_review', message: '请选择处理结果，并填写 1 至 300 字处理说明' });
+            return;
+          }
+          const result = reviewFeedback.run(status, reviewNote, trackingCode);
+          if (!result.changes) {
+            sendJson(response, 409, { error: 'already_reviewed', message: '反馈不存在或已经处理' });
+            return;
+          }
+          sendJson(response, 200, { feedback: mapFeedback(feedbackByCode.get(trackingCode)) });
+          return;
+        }
+        sendJson(response, 404, { error: 'not_found', message: '管理员接口不存在' });
         return;
       }
 

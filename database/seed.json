@@ -13,8 +13,7 @@
       "sourceLabel": "东一",
       "longitude": 114.4138161,
       "latitude": 30.5136747,
-      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）",
-      "mealPeriod": "both"
+      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）"
     },
     {
       "id": "canteen-dongsan",
@@ -28,8 +27,7 @@
       "sourceLabel": "东三",
       "longitude": 114.4148365,
       "latitude": 30.5132501,
-      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）",
-      "mealPeriod": "both"
+      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）"
     },
     {
       "id": "canteen-jijinyuan",
@@ -43,8 +41,7 @@
       "sourceLabel": "集锦园",
       "longitude": 114.4093298,
       "latitude": 30.5191317,
-      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）",
-      "mealPeriod": "both"
+      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）"
     },
     {
       "id": "stall-hospital",
@@ -59,8 +56,7 @@
       "sourceLabel": "驴打滚（校医院对面的小窗口）",
       "longitude": 114.4087699,
       "latitude": 30.5196256,
-      "coordinateSource": "华中科技大学“一张图”卫生社保图层（2026）",
-      "mealPeriod": "both"
+      "coordinateSource": "华中科技大学“一张图”卫生社保图层（2026）"
     },
     {
       "id": "canteen-yuyuan",
@@ -74,8 +70,7 @@
       "sourceLabel": "喻园",
       "longitude": 114.4092426,
       "latitude": 30.5186154,
-      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）",
-      "mealPeriod": "both"
+      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）"
     },
     {
       "id": "canteen-jixianlou",
@@ -89,8 +84,7 @@
       "sourceLabel": "集贤楼",
       "longitude": 114.4114079,
       "latitude": 30.5169447,
-      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）",
-      "mealPeriod": "both"
+      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）"
     },
     {
       "id": "canteen-dongyuan",
@@ -104,8 +98,7 @@
       "sourceLabel": "东园",
       "longitude": 114.4305248,
       "latitude": 30.5159237,
-      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）",
-      "mealPeriod": "both"
+      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）"
     },
     {
       "id": "canteen-xiyi",
@@ -119,8 +112,7 @@
       "sourceLabel": "西一",
       "longitude": 114.4005051,
       "latitude": 30.5165933,
-      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）",
-      "mealPeriod": "both"
+      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）"
     },
     {
       "id": "canteen-xier",
@@ -134,8 +126,7 @@
       "sourceLabel": "西二",
       "longitude": 114.3995545,
       "latitude": 30.5165115,
-      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）",
-      "mealPeriod": "both"
+      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）"
     },
     {
       "id": "canteen-baijingyuan",
@@ -149,8 +140,7 @@
       "sourceLabel": "百景园",
       "longitude": 114.402179,
       "latitude": 30.5186574,
-      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）",
-      "mealPeriod": "both"
+      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）"
     },
     {
       "id": "canteen-xueer",
@@ -164,8 +154,7 @@
       "sourceLabel": "学二",
       "longitude": 114.4263324,
       "latitude": 30.5143418,
-      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）",
-      "mealPeriod": "both"
+      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）"
     },
     {
       "id": "canteen-dongjiaogong",
@@ -179,8 +168,7 @@
       "sourceLabel": "东教工",
       "longitude": 114.4265937,
       "latitude": 30.5091722,
-      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）",
-      "mealPeriod": "both"
+      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）"
     },
     {
       "id": "shop-yang",
@@ -194,8 +182,7 @@
       "sourceLabel": "杨阿姨鸡蛋灌饼",
       "longitude": 114.402152,
       "latitude": 30.5174932,
-      "coordinateSource": "用户地图标记（2026-11-01，大致位置）",
-      "mealPeriod": "dinner"
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-yunyuan-pancake",
@@ -210,8 +197,7 @@
       "sourceLabel": "韵苑茶咖山东杂粮煎饼",
       "longitude": 114.4270011,
       "latitude": 30.5184523,
-      "coordinateSource": "用户地图标记（2026-11-01，大致位置）",
-      "mealPeriod": "both"
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-yunyuan-chicken",
@@ -226,8 +212,7 @@
       "sourceLabel": "韵苑茶咖正新鸡排",
       "longitude": 114.4270011,
       "latitude": 30.5184523,
-      "coordinateSource": "用户地图标记（2026-11-01，大致位置）",
-      "mealPeriod": "both"
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-yunyuan-wonton",
@@ -242,8 +227,7 @@
       "sourceLabel": "韵苑茶咖成都抄手",
       "longitude": 114.4270011,
       "latitude": 30.5184523,
-      "coordinateSource": "用户地图标记（2026-11-01，大致位置）",
-      "mealPeriod": "both"
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-riceball",
@@ -257,8 +241,7 @@
       "sourceLabel": "一捧饭团",
       "longitude": 114.417635,
       "latitude": 30.5176297,
-      "coordinateSource": "用户地图标记（2026-11-01，大致位置）",
-      "mealPeriod": "both"
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-pizzahut",
@@ -272,8 +255,7 @@
       "sourceLabel": "必胜客",
       "longitude": 114.4186517,
       "latitude": 30.5171679,
-      "coordinateSource": "用户地图标记（2026-11-01，大致位置）",
-      "mealPeriod": "both"
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-mcdonalds",
@@ -287,8 +269,7 @@
       "sourceLabel": "麦当劳",
       "longitude": 114.4071655,
       "latitude": 30.518637,
-      "coordinateSource": "用户地图标记（2026-11-01，大致位置）",
-      "mealPeriod": "both"
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-burgerking",
@@ -302,8 +283,7 @@
       "sourceLabel": "汉堡王",
       "longitude": 114.42615,
       "latitude": 30.51305,
-      "coordinateSource": "公开地址与官方东校区点位校准",
-      "mealPeriod": "both"
+      "coordinateSource": "公开地址与官方东校区点位校准"
     },
     {
       "id": "shop-xihuayuan-lamb",
@@ -317,8 +297,7 @@
       "sourceLabel": "西华园羊排",
       "longitude": 114.4009066,
       "latitude": 30.5166371,
-      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）",
-      "mealPeriod": "both"
+      "coordinateSource": "华中科技大学“一张图”餐饮图层（2026）"
     },
     {
       "id": "foodcourt-songlinli",
@@ -332,8 +311,7 @@
       "sourceLabel": "菘邻里",
       "longitude": 114.4012417,
       "latitude": 30.5166223,
-      "coordinateSource": "用户地图标记（2026-11-01，大致位置）",
-      "mealPeriod": "both"
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-songlinli-bainqu",
@@ -348,8 +326,7 @@
       "sourceLabel": "菘邻里：白拿区",
       "longitude": 114.4012417,
       "latitude": 30.5166223,
-      "coordinateSource": "用户地图标记（2026-11-01，大致位置）",
-      "mealPeriod": "both"
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-songlinli-maocai",
@@ -364,8 +341,7 @@
       "sourceLabel": "菘邻里：冒菜",
       "longitude": 114.4012417,
       "latitude": 30.5166223,
-      "coordinateSource": "用户地图标记（2026-11-01，大致位置）",
-      "mealPeriod": "both"
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-songlinli-chaojijuan",
@@ -380,8 +356,7 @@
       "sourceLabel": "菘邻里：超吉卷",
       "longitude": 114.4012417,
       "latitude": 30.5166223,
-      "coordinateSource": "用户地图标记（2026-11-01，大致位置）",
-      "mealPeriod": "both"
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-songlinli-mixian",
@@ -396,8 +371,7 @@
       "sourceLabel": "菘邻里：米线",
       "longitude": 114.4012417,
       "latitude": 30.5166223,
-      "coordinateSource": "用户地图标记（2026-11-01，大致位置）",
-      "mealPeriod": "both"
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-songlinli-xiayuyi",
@@ -412,8 +386,7 @@
       "sourceLabel": "菘邻里：夏威驿",
       "longitude": 114.4012417,
       "latitude": 30.5166223,
-      "coordinateSource": "用户地图标记（2026-11-01，大致位置）",
-      "mealPeriod": "both"
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "shop-songlinli-dominos",
@@ -428,8 +401,7 @@
       "sourceLabel": "菘邻里：达美乐",
       "longitude": 114.4012417,
       "latitude": 30.5166223,
-      "coordinateSource": "用户地图标记（2026-11-01，大致位置）",
-      "mealPeriod": "both"
+      "coordinateSource": "用户地图标记（2026-11-01，大致位置）"
     },
     {
       "id": "canteen-baihuiyuan",
@@ -437,8 +409,7 @@
       "placeType": "canteen",
       "sourceGroup": "食堂",
       "locationStatus": "未定位",
-      "sourceLabel": "百惠园",
-      "mealPeriod": "both"
+      "sourceLabel": "百惠园"
     },
     {
       "id": "canteen-xueyi",
@@ -446,8 +417,7 @@
       "placeType": "canteen",
       "sourceGroup": "食堂",
       "locationStatus": "未定位",
-      "sourceLabel": "学一",
-      "mealPeriod": "both"
+      "sourceLabel": "学一"
     },
     {
       "id": "canteen-yunjiu",
@@ -455,8 +425,7 @@
       "placeType": "canteen",
       "sourceGroup": "食堂",
       "locationStatus": "未定位",
-      "sourceLabel": "韵酒",
-      "mealPeriod": "both"
+      "sourceLabel": "韵酒"
     }
   ],
   "recommendations": [
