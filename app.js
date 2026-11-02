@@ -8,6 +8,7 @@ const state = {
   results: [],
   source: '',
   quickMode: false,
+  homeRecommendationActive: false,
   mapType: 'all',
   selectedMapPlaceId: null,
   calibrationMode: false,
@@ -167,19 +168,21 @@ async function loadPlaces() {
       state.source = '项目组公开清单';
     } catch (seedError) {
       console.error('加载觅食点失败：', apiError, seedError);
-      $('#home .head > .small').textContent = '数据加载失败';
+      $('#home-feed-list').innerHTML = '<div class="empty">数据加载失败，请刷新页面重试。</div>';
       $('#adminlist').textContent = '数据加载失败，请通过本地服务或 GitHub Pages 打开网页后重试。';
       toast('觅食点加载失败，请刷新页面重试');
       return;
     }
   }
 
-  $('#home .head > .small').textContent = `已收集 ${state.places.length} 个地点 · ${state.source}`;
+  $('#home-feed-count').textContent = `已收集 ${state.places.length} 个地点 · ${state.source}`;
   $('#count').textContent = `${state.places.length} 个地点`;
   loadCalibrationDraft();
   renderCalibrationPanel();
   renderAllPlaces();
   renderMap();
+  renderHomeFeed();
+  populateFeedbackPlaces();
 }
 
 function toast(message) {
@@ -488,10 +491,12 @@ function markerIcon(group) {
   const primary = group.places.find(place => place.placeType === 'canteen') ?? group.places[0];
   const approximate = group.places.some(place => place.locationStatus !== '已确认' || calibrationForPlace(place.id));
   const selected = group.places.some(place => place.id === state.selectedMapPlaceId);
+  const recommended = state.homeRecommendationActive && group.places.some(place => state.results.some(result => result.id === place.id));
+  const dimmed = state.homeRecommendationActive && !recommended;
   const calibrated = group.places.some(place => calibrationForPlace(place.id));
   return L.divIcon({
     className: 'food-map-icon',
-    html: `<span class="geo-marker ${mapKind(primary) === 'shop' ? 'shop' : ''} ${approximate ? 'approximate' : ''} ${selected ? 'selected' : ''} ${calibrated ? 'calibrated' : ''}"><span>${group.places.length > 1 ? group.places.length : '•'}</span></span>`,
+    html: `<span class="geo-marker ${mapKind(primary) === 'shop' ? 'shop' : ''} ${approximate ? 'approximate' : ''} ${selected ? 'selected' : ''} ${recommended ? 'recommended' : ''} ${dimmed ? 'dimmed' : ''} ${calibrated ? 'calibrated' : ''}"><span>${group.places.length > 1 ? group.places.length : '•'}</span></span>`,
     iconSize: [38, 38],
     iconAnchor: [19, 38],
     popupAnchor: [0, -34],
@@ -565,7 +570,7 @@ function showMapPopup(ids) {
   leafletMap.panTo(marker.getLatLng(), { animate: true });
 }
 
-function focusPlaceOnMap(id) {
+function focusPlaceOnMap(id, { scroll = true } = {}) {
   const original = state.places.find(place => place.id === id);
   if (!original) return;
   const place = original.parentId ? state.places.find(item => item.id === original.parentId) ?? original : original;
@@ -574,13 +579,13 @@ function focusPlaceOnMap(id) {
   document.querySelectorAll('#map-filters [data-map-type]').forEach(button => {
     button.setAttribute('aria-pressed', String(button.dataset.mapType === 'all'));
   });
-  scrollToMap();
+  if (scroll) scrollToMap();
   setTimeout(() => {
     const marker = leafletMarkerByPlace.get(place.id) ?? leafletMarkerByPlace.get(original.id);
     if (!marker) return;
     leafletMap.flyTo(marker.getLatLng(), Math.max(17, leafletMap.getZoom()), { duration: 0.65 });
     showMapPopup([place.id, original.id]);
-  }, 180);
+  }, scroll ? 180 : 40);
 }
 
 function updateMealButtons() {
@@ -624,7 +629,53 @@ function recommend(quick) {
     ? `${mealLabel()}想吃什么 · ${state.source}`
     : `${areaLabel()} · ${placeTypeLabel()} · ${state.source}`;
   renderResults();
-  go('results');
+  state.homeRecommendationActive = true;
+  renderHomeFeed();
+  renderMap();
+  setTimeout(() => focusRecommendedOnMap(), 80);
+}
+
+function recentPlaces() {
+  return state.places.slice(-4).reverse();
+}
+
+function homeFeedCard(place, index, recommended) {
+  const featured = place.featuredRecommendation;
+  const description = recommended
+    ? `推荐菜品：${featured?.name || '已收集菜品线索'}`
+    : `${placeLabel(place)} · ${locationFor(place)}`;
+  return `<button class="feed-card" type="button" data-home-focus="${escapeHtml(place.id)}" aria-label="在地图中查看${escapeHtml(place.name)}">
+    <span class="feed-card-top"><span class="zone pending">${escapeHtml(recommended ? '为你推荐' : placeLabel(place))}</span>${recommended ? `<span class="score">${escapeHtml(place.verificationStatus || '待确认')}</span>` : ''}</span>
+    <h3>${escapeHtml(place.name)}</h3><p>${escapeHtml(description)}</p><span class="feed-cta">在地图中查看 →</span>
+  </button>`;
+}
+
+function renderHomeFeed() {
+  const list = $('#home-feed-list');
+  if (!list) return;
+  const recommended = state.homeRecommendationActive;
+  const items = recommended ? state.results : recentPlaces();
+  $('#home-feed-pill').textContent = recommended ? '推荐结果' : '本期新收录';
+  $('#home-feed-title').textContent = recommended
+    ? `${items.length || '暂无'} 个觅食选择`
+    : '新发现的觅食点';
+  $('#home-feed-copy').textContent = recommended
+    ? '地图已高亮这些地点；点击任意卡片，左侧地图会立即聚焦。'
+    : '看看项目组刚整理进清单的地点，点击卡片可在地图中定位。';
+  list.innerHTML = items.length
+    ? items.map((place, index) => homeFeedCard(place, index, recommended)).join('')
+    : '<div class="empty">没有匹配当前条件的地点，请放宽筛选后重试。</div>';
+}
+
+function focusRecommendedOnMap() {
+  if (!leafletMap || !state.results.length) return;
+  const markers = state.results.map(place => leafletMarkerByPlace.get(place.id)).filter(Boolean);
+  if (!markers.length) return;
+  if (markers.length === 1) {
+    leafletMap.flyTo(markers[0].getLatLng(), Math.max(16, leafletMap.getZoom()), { duration: 0.55 });
+    return;
+  }
+  leafletMap.fitBounds(L.featureGroup(markers).getBounds(), { padding: [35, 35], maxZoom: 16, animate: true });
 }
 
 function card(place, index) {
@@ -669,6 +720,8 @@ function swap(index) {
   if (!next) return toast('当前条件下没有更多候选地点');
   state.results[index] = chooseResult(next, state.quickMode);
   renderResults();
+  renderHomeFeed();
+  renderMap();
   toast('已为你换一家');
 }
 
@@ -755,36 +808,55 @@ function renderFeedbackResult(feedback) {
   $('#tracking-result').innerHTML = `<div class="feedback-receipt"><b>反馈编号：${escapeHtml(feedback.trackingCode)}</b><br>当前状态：${escapeHtml(feedbackStatusLabel(feedback.status))}<br>反馈对象：${escapeHtml(place?.name || feedback.proposedPlaceName || '新增地点')}<br>反馈类型：${escapeHtml(feedback.feedbackType)}<br>提交时间：${escapeHtml(new Date(feedback.submittedAt).toLocaleString('zh-CN'))}${feedback.reviewNote ? `<br>处理说明：${escapeHtml(feedback.reviewNote)}` : ''}</div>`;
 }
 
-async function handleFeedbackSubmit(place, form) {
+function populateFeedbackPlaces() {
+  const select = $('#feedback-place');
+  if (!select) return;
+  select.innerHTML = `<option value="">请选择已有地点</option>${state.places.map(place => `<option value="${escapeHtml(place.id)}">${escapeHtml(place.name)}（${escapeHtml(placeLabel(place))}）</option>`).join('')}`;
+}
+
+function activateFeedbackTab(tab) {
+  document.querySelectorAll('[data-feedback-tab]').forEach(button => {
+    button.setAttribute('aria-selected', String(button.dataset.feedbackTab === tab));
+  });
+  $('#feedback-submit-pane').hidden = tab !== 'submit';
+  $('#feedback-status-pane').hidden = tab !== 'status';
+}
+
+async function handleFeedbackSubmit(place, form, receiptSelector = '#feedback-receipt') {
   const data = new FormData(form);
   const feedbackType = String(data.get('feedbackType') || '其他');
   const details = String(data.get('details') || '').trim();
   const proposedPlaceName = String(data.get('proposedPlaceName') || '').trim();
+  const selectedPlaceId = place?.id || String(data.get('placeId') || '').trim() || null;
   if (!details) return toast('请填写修改意见或补充说明');
   if (feedbackType === '新增位置' && !proposedPlaceName) return toast('请填写新增地点名称');
-  const calibration = calibrationForPlace(place.id);
+  if (feedbackType !== '新增位置' && !selectedPlaceId) return toast('请选择要反馈的已有地点，或改为“新增地点”');
+  const calibration = selectedPlaceId ? calibrationForPlace(selectedPlaceId) : null;
   const payload = {
-    placeId: feedbackType === '新增位置' ? null : place.id,
+    placeId: feedbackType === '新增位置' ? null : selectedPlaceId,
     proposedPlaceName: feedbackType === '新增位置' ? proposedPlaceName : null,
     feedbackType,
     details,
     proposedPayload: calibration ? { latitude: calibration.latitude, longitude: calibration.longitude } : null,
   };
   const button = form.querySelector('button[type="submit"]');
+  const defaultText = button.textContent;
   button.disabled = true;
   button.textContent = '正在提交…';
   try {
     const feedback = await submitFeedback(payload);
-    $('#feedback-receipt').innerHTML = `<b>反馈已提交</b><br>反馈编号：<strong>${escapeHtml(feedback.trackingCode)}</strong><br>当前状态：${escapeHtml(feedbackStatusLabel(feedback.status))}<br><span class="small">请保存反馈编号，以便查询处理结果。</span><div class="feedback-actions"><button id="copy-tracking-code" class="secondary" type="button">复制编号</button><button id="open-feedback-status" class="secondary" type="button">查看处理状态</button></div>`;
-    $('#feedback-receipt').hidden = false;
-    $('#copy-tracking-code').onclick = async () => {
+    const receipt = $(receiptSelector);
+    receipt.innerHTML = `<b>反馈已提交</b><br>反馈编号：<strong>${escapeHtml(feedback.trackingCode)}</strong><br>当前状态：${escapeHtml(feedbackStatusLabel(feedback.status))}<br><span class="small">请保存反馈编号，以便查询处理结果。</span><div class="feedback-actions"><button id="copy-tracking-code" class="secondary" type="button">复制编号</button><button id="open-feedback-status" class="secondary" type="button">查看处理状态</button></div>`;
+    receipt.hidden = false;
+    receipt.querySelector('#copy-tracking-code').onclick = async () => {
       await navigator.clipboard?.writeText(feedback.trackingCode);
       toast('反馈编号已复制');
     };
-    $('#open-feedback-status').onclick = () => {
+    receipt.querySelector('#open-feedback-status').onclick = () => {
       $('#tracking-code').value = feedback.trackingCode;
       renderFeedbackResult(feedback);
-      go('feedback-status');
+      activateFeedbackTab('status');
+      go('feedback');
     };
     form.reset();
     form.querySelector('[data-proposed-name]').hidden = true;
@@ -792,7 +864,7 @@ async function handleFeedbackSubmit(place, form) {
     toast(error.message || '反馈提交失败，请稍后重试');
   } finally {
     button.disabled = false;
-    button.textContent = '提交修改意见';
+    button.textContent = defaultText;
   }
 }
 
@@ -934,6 +1006,10 @@ function setupPage() {
   });
   $('#quick').addEventListener('click', () => recommend(true));
   $('#recommend').addEventListener('click', () => recommend(false));
+  $('#home-feed-list').addEventListener('click', event => {
+    const card = event.target.closest('[data-home-focus]');
+    if (card) focusPlaceOnMap(card.dataset.homeFocus, { scroll: false });
+  });
   $('#cards').addEventListener('click', event => {
     const detailButton = event.target.closest('[data-detail]');
     const swapButton = event.target.closest('[data-swap]');
@@ -955,15 +1031,29 @@ function setupPage() {
       $('#tracking-result').innerHTML = `<div class="empty">${escapeHtml(error.message || '查询失败，请稍后重试')}</div>`;
     }
   });
+  document.querySelectorAll('[data-feedback-tab]').forEach(button => {
+    button.addEventListener('click', () => activateFeedbackTab(button.dataset.feedbackTab));
+  });
+  $('#feedback-page-form').addEventListener('submit', event => {
+    event.preventDefault();
+    handleFeedbackSubmit(null, event.currentTarget, '#feedback-page-receipt');
+  });
+  $('#feedback-page-form').elements.feedbackType.addEventListener('change', event => {
+    const isNew = event.target.value === '新增位置';
+    const form = event.currentTarget.form;
+    form.querySelector('[data-proposed-name]').hidden = !isNew;
+    form.elements.placeId.disabled = isNew;
+    if (isNew) form.elements.placeId.value = '';
+  });
 }
 
 setupPage();
 const initialView = location.hash.slice(1);
 if (initialView === 'map') scrollToMap('auto');
-else if (['home', 'admin', 'feedback-status'].includes(initialView)) go(initialView, { updateHistory: false });
+else if (['home', 'admin', 'feedback'].includes(initialView)) go(initialView, { updateHistory: false });
 window.addEventListener('popstate', () => {
   const view = location.hash.slice(1);
   if (view === 'map') scrollToMap('auto');
-  else go(['home', 'results', 'detail', 'admin', 'feedback-status'].includes(view) ? view : 'home', { updateHistory: false });
+  else go(['home', 'results', 'detail', 'admin', 'feedback'].includes(view) ? view : 'home', { updateHistory: false });
 });
 loadPlaces();
