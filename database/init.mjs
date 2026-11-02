@@ -20,6 +20,9 @@ if (!placeColumns.has('coordinate_source')) database.exec('ALTER TABLE places AD
 if (!placeColumns.has('location_status')) {
   database.exec("ALTER TABLE places ADD COLUMN location_status TEXT NOT NULL DEFAULT '未定位'");
 }
+if (!placeColumns.has('meal_period')) {
+  database.exec("ALTER TABLE places ADD COLUMN meal_period TEXT CHECK (meal_period IN ('lunch', 'dinner', 'both'))");
+}
 
 const feedbackTableSql = database.prepare("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'feedback'").get()?.sql ?? '';
 if (!feedbackTableSql.includes('tracking_code') || !feedbackTableSql.includes('名称有误')) {
@@ -52,12 +55,14 @@ if (!feedbackTableSql.includes('tracking_code') || !feedbackTableSql.includes('�
     CREATE UNIQUE INDEX feedback_tracking_code ON feedback (tracking_code);
   `);
 }
+// 旧版 feedback 表没有 tracking_code；必须在表迁移之后创建该索引。
+database.exec('CREATE UNIQUE INDEX IF NOT EXISTS feedback_tracking_code ON feedback (tracking_code)');
 
 const addPlace = database.prepare(`
   INSERT INTO places
-    (id, name, place_type, source_group, parent_id, campus_area, location_note,
+    (id, name, place_type, source_group, parent_id, campus_area, location_note, meal_period,
      map_x, map_y, longitude, latitude, coordinate_source, location_status, source_label)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(id) DO UPDATE SET
     name = excluded.name,
     place_type = excluded.place_type,
@@ -65,6 +70,7 @@ const addPlace = database.prepare(`
     parent_id = excluded.parent_id,
     campus_area = excluded.campus_area,
     location_note = excluded.location_note,
+    meal_period = excluded.meal_period,
     map_x = excluded.map_x,
     map_y = excluded.map_y,
     longitude = excluded.longitude,
@@ -100,6 +106,7 @@ try {
       place.parentId ?? null,
       place.campusArea ?? null,
       place.locationNote ?? null,
+      place.mealPeriod ?? null,
       place.mapX ?? null,
       place.mapY ?? null,
       place.longitude ?? null,

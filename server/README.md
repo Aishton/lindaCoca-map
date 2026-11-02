@@ -19,7 +19,7 @@ node server/server.mjs
 | `POST /api/feedbacks` | 提交修改意见 | `{ "feedback": { "trackingCode": "...", "status": "待审核" } }` |
 | `GET /api/feedbacks/:trackingCode` | 按反馈编号查询状态 | `{ "feedback": {...} }` |
 
-地点字段为 `id`、`name`、`placeType`、`sourceGroup`、`parentId`、`campusArea`、`locationNote`、`longitude`、`latitude`、`coordinateSource`、`mapX`、`mapY`、`locationStatus`、`sourceLabel`、`verificationStatus`、`lastConfirmedAt` 和 `recommendations`。菜品字段为 `id`、`placeId`、`name`、`floor`、`note`、`mealPeriod`、`sourceLabel` 和 `verificationStatus`。当前地图使用 `longitude` 和 `latitude`；`mapX`、`mapY` 仅为旧版形象化底图兼容字段。
+地点字段为 `id`、`name`、`placeType`、`sourceGroup`、`parentId`、`campusArea`、`locationNote`、`mealPeriod`（`lunch`／`dinner`／`both`）、`longitude`、`latitude`、`coordinateSource`、`mapX`、`mapY`、`locationStatus`、`sourceLabel`、`verificationStatus`、`lastConfirmedAt` 和 `recommendations`。菜品字段为 `id`、`placeId`、`name`、`floor`、`note`、`mealPeriod`、`sourceLabel` 和 `verificationStatus`。当前地图使用 `longitude` 和 `latitude`；`mapX`、`mapY` 仅为旧版形象化底图兼容字段。
 
 未知地点返回 HTTP 404 和 `{ "error": "place_not_found", "message": "..." }`。网页优先读取 `/api/places`，若 API 不可用则读取 `database/seed.json`。本地服务将修改意见写入 SQLite 并返回反馈编号；GitHub Pages 演示环境使用浏览器本地存储提供相同的提交和查询体验。管理员审核与正式地点写入尚未实现。
 
