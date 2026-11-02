@@ -500,12 +500,11 @@ function markerIcon(group) {
   const approximate = group.places.some(place => place.locationStatus !== '已确认' || calibrationForPlace(place.id));
   const selected = group.places.some(place => place.id === state.selectedMapPlaceId);
   const recommended = state.homeRecommendationActive && group.places.some(place => state.results.some(result => result.id === place.id));
-  const searched = Boolean(state.mapSearchQuery) && mapGroupMatches(group);
-  const dimmed = state.homeRecommendationActive && !recommended && !searched;
+  const dimmed = state.homeRecommendationActive && !recommended;
   const calibrated = group.places.some(place => calibrationForPlace(place.id));
   return L.divIcon({
     className: 'food-map-icon',
-    html: `<span class="geo-marker ${mapKind(primary) === 'shop' ? 'shop' : ''} ${approximate ? 'approximate' : ''} ${selected ? 'selected' : ''} ${recommended ? 'recommended' : ''} ${searched ? 'searched' : ''} ${dimmed ? 'dimmed' : ''} ${calibrated ? 'calibrated' : ''}"><span>${group.places.length > 1 ? group.places.length : '•'}</span></span>`,
+    html: `<span class="geo-marker ${mapKind(primary) === 'shop' ? 'shop' : ''} ${approximate ? 'approximate' : ''} ${selected ? 'selected' : ''} ${recommended ? 'recommended' : ''} ${dimmed ? 'dimmed' : ''} ${calibrated ? 'calibrated' : ''}"><span>${group.places.length > 1 ? group.places.length : '•'}</span></span>`,
     iconSize: [38, 38],
     iconAnchor: [19, 38],
     popupAnchor: [0, -34],
@@ -562,21 +561,6 @@ function renderMap() {
     closeMapPopup();
   }
   setTimeout(() => leafletMap.invalidateSize(), 0);
-}
-
-function focusMapSearchResults() {
-  if (!leafletMap || !state.mapSearchQuery) return;
-  const markers = [...new Set(leafletMarkerByPlace.values())];
-  if (!markers.length) return toast('地图中没有找到匹配地点');
-  if (markers.length === 1) {
-    const marker = markers[0];
-    state.selectedMapPlaceId = marker.foodGroup.places[0].id;
-    updateLeafletMarkerIcons();
-    marker.openPopup();
-    leafletMap.flyTo(marker.getLatLng(), 17, { duration: 0.65 });
-    return;
-  }
-  leafletMap.fitBounds(L.featureGroup(markers).getBounds(), { padding: [55, 55], maxZoom: 16, animate: true, duration: 0.65 });
 }
 
 function closeMapPopup() {
@@ -678,7 +662,7 @@ function homeFeedCard(place, index, recommended) {
   const dish = featured?.name || place.recommendations[0]?.name || '暂无具体菜品记录';
   const location = locationFor(place, featured);
   return `<article class="feed-card">
-    <span class="feed-card-top"><span class="feed-card-number">${String(index + 1).padStart(2, '0')}</span><span class="zone pending">${escapeHtml(recommended ? '为你推荐' : placeLabel(place))}</span></span>
+    <span class="feed-card-top"><span class="zone pending">${escapeHtml(recommended ? '为你推荐' : placeLabel(place))}</span></span>
     <h3>${escapeHtml(place.name)}</h3><p><b>推荐菜品</b> · ${escapeHtml(dish)}</p><p class="feed-card-meta">📍 ${escapeHtml(location)}</p><p class="feed-card-meta">最近确认：${escapeHtml(place.lastConfirmedAt || '暂无确认记录')}</p>
     <div class="feed-card-actions"><button type="button" data-home-focus="${escapeHtml(place.id)}">地图定位</button><button type="button" data-home-detail="${escapeHtml(place.id)}">查看详情</button>${recommended ? `<button type="button" data-home-swap="${index}">换一家 ↻</button>` : ''}</div>
   </article>`;
@@ -1070,7 +1054,6 @@ function setupPage() {
     event.preventDefault();
     state.mapSearchQuery = $('#map-search').value.trim().toLocaleLowerCase();
     renderMap();
-    setTimeout(focusMapSearchResults, 60);
     toast(state.mapSearchQuery ? `正在地图中查找“${$('#map-search').value.trim()}”` : '已显示全部地点');
   });
   $('#calibration-target').addEventListener('change', event => {
