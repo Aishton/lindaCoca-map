@@ -58,11 +58,29 @@ if (!feedbackTableSql.includes('tracking_code') || !feedbackTableSql.includes('�
 // 旧数据库需先完成反馈表迁移，再创建依赖新字段的索引。
 database.exec('CREATE UNIQUE INDEX IF NOT EXISTS feedback_tracking_code ON feedback (tracking_code)');
 
+// 沿用 meal_period 字段，为已有数据库扩展早餐、午晚餐取值。
+const recommendationSql = database.prepare("SELECT sql FROM sqlite_master WHERE name='recommendations'").get().sql;
+if (!recommendationSql.includes("'breakfast'")) {
+  const definition = readFileSync(join(directory, 'schema.sql'), 'utf8').match(/CREATE TABLE IF NOT EXISTS recommendations \([\s\S]*?\n\);/)[0];
+  database.exec('BEGIN');
+  try {
+    database.exec(definition.replace('IF NOT EXISTS recommendations', 'recommendations_next'));
+    database.exec(`INSERT INTO recommendations_next SELECT id, place_id, name, floor, note, meal_period, source_label, verification_status, created_at FROM recommendations;
+      DROP TABLE recommendations;
+      ALTER TABLE recommendations_next RENAME TO recommendations;
+      CREATE INDEX recommendations_place_id ON recommendations(place_id);`);
+    database.exec('COMMIT');
+  } catch (error) {
+    database.exec('ROLLBACK');
+    throw error;
+  }
+}
+
 const addPlace = database.prepare(`
   INSERT INTO places
     (id, name, place_type, source_group, parent_id, campus_area, location_note,
-     map_x, map_y, longitude, latitude, coordinate_source, location_status, source_label)
-  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+     map_x, map_y, longitude, latitude, coordinate_source, location_status, source_label, verification_status, last_confirmed_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(id) DO UPDATE SET
     name = excluded.name,
     place_type = excluded.place_type,
@@ -77,19 +95,23 @@ const addPlace = database.prepare(`
     coordinate_source = excluded.coordinate_source,
     location_status = excluded.location_status,
     source_label = excluded.source_label,
+    verification_status = excluded.verification_status,
+    last_confirmed_at = excluded.last_confirmed_at,
     updated_at = CURRENT_TIMESTAMP
 `);
 
 const addRecommendation = database.prepare(`
   INSERT INTO recommendations
-    (id, place_id, name, floor, note, source_label)
-  VALUES (?, ?, ?, ?, ?, ?)
+    (id, place_id, name, floor, note, source_label, meal_period, verification_status)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   ON CONFLICT(id) DO UPDATE SET
     place_id = excluded.place_id,
     name = excluded.name,
     floor = excluded.floor,
     note = excluded.note,
-    source_label = excluded.source_label
+    source_label = excluded.source_label,
+    meal_period = excluded.meal_period,
+    verification_status = excluded.verification_status
 `);
 
 let transactionOpen = false;
@@ -112,6 +134,8 @@ try {
       place.coordinateSource ?? null,
       place.locationStatus ?? '未定位',
       place.sourceLabel,
+      place.verificationStatus ?? '待确认',
+      place.lastConfirmedAt ?? null,
     );
   }
   for (const item of seed.recommendations) {
@@ -122,6 +146,8 @@ try {
       item.floor ?? null,
       item.note ?? null,
       item.sourceLabel,
+      item.mealPeriod ?? null,
+      item.verificationStatus ?? '待确认',
     );
   }
   database.exec('COMMIT');

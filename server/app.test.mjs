@@ -15,9 +15,9 @@ test('地点列表和详情从 SQLite 返回，缺失地点返回 404', async ()
   `).run('canteen-demo', '示例食堂', 'canteen', '食堂', '示例食堂', 42, 58,
     114.4, 30.5, '测试坐标', '大致位置');
   database.prepare(`
-    INSERT INTO recommendations (id, place_id, name, floor, source_label)
-    VALUES (?, ?, ?, ?, ?)
-  `).run('rec-demo', 'canteen-demo', '牛肉面', 2, '二楼牛肉面');
+    INSERT INTO recommendations (id, place_id, name, floor, source_label, meal_period, verification_status)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `).run('rec-demo', 'canteen-demo', '牛肉面', 2, '二楼牛肉面', 'breakfast', '已核实');
 
   const server = createApp(database, { adminUsername: 'reviewer', adminPassword: 'test-password-123' });
   await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
@@ -30,6 +30,8 @@ test('地点列表和详情从 SQLite 返回，缺失地点返回 404', async ()
     assert.equal(data.places.length, 1);
     assert.equal(data.places[0].recommendations[0].name, '牛肉面');
     assert.equal(data.places[0].recommendations[0].floor, 2);
+    assert.equal(data.places[0].recommendations[0].mealPeriod, 'breakfast');
+    assert.equal(data.places[0].recommendations[0].verificationStatus, '已确认');
     assert.equal(data.places[0].mapX, 42);
     assert.equal(data.places[0].longitude, 114.4);
     assert.equal(data.places[0].coordinateSource, '测试坐标');

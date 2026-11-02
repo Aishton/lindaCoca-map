@@ -4,7 +4,7 @@
 
 - 在线网站：[https://aishton.github.io/lindaCoca-map/](https://aishton.github.io/lindaCoca-map/)
 - 网站入口：`index.html`
-- 当前数据：31 个地点／店铺、63 条食物推荐
+- 当前数据：31 个地点／店铺、64 条食物推荐
 
 ## 当前功能
 

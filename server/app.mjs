@@ -79,7 +79,7 @@ function mapRecommendation(row) {
     note: row.note,
     mealPeriod: row.meal_period,
     sourceLabel: row.source_label,
-    verificationStatus: row.verification_status,
+    verificationStatus: row.verification_status === '已核实' ? '已确认' : row.verification_status,
   };
 }
 
@@ -99,7 +99,7 @@ function mapPlace(row, recommendations) {
     coordinateSource: row.coordinate_source,
     locationStatus: row.location_status,
     sourceLabel: row.source_label,
-    verificationStatus: row.verification_status,
+    verificationStatus: row.verification_status === '已核实' ? '已确认' : row.verification_status,
     lastConfirmedAt: row.last_confirmed_at,
     recommendations,
   };
