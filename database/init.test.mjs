@@ -37,7 +37,7 @@ test('旧版反馈表可迁移且保留记录，重复初始化不报错', () =>
     assert.equal(migrated.prepare('SELECT COUNT(*) AS count FROM feedback').get().count, 1);
     assert.equal(migrated.prepare('SELECT details FROM feedback').get().details, '原有反馈应保留');
     assert.equal(migrated.prepare("SELECT meal_period AS mealPeriod FROM places WHERE name='杨阿姨鸡蛋灌饼'").get().mealPeriod, 'dinner');
-    assert.equal(migrated.prepare("SELECT COUNT(*) AS count FROM places WHERE meal_period='both'").get().count, 27);
+    assert.equal(migrated.prepare("SELECT COUNT(*) AS count FROM places WHERE meal_period='both'").get().count, 30);
     assert.ok(migrated.prepare("SELECT name FROM sqlite_master WHERE type='index' AND name='feedback_tracking_code'").get());
     migrated.close();
   } finally {
